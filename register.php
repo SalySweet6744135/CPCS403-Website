@@ -220,6 +220,12 @@
     }
     .auth-success h3{ color:var(--primary); margin:0 0 8px; font-size:1.3rem; }
     .auth-success p{ color:var(--muted); font-size:0.9rem; }
+    .auth-email-note{
+      margin-top:10px;
+      font-size:0.85rem;
+      line-height:1.45;
+      max-width:32ch;
+    }
 
     @media(max-width:860px){
       .auth-wrap{ grid-template-columns:1fr; }
@@ -343,6 +349,7 @@
         <div class="auth-success-icon">✓</div>
         <h3>Account Created!</h3>
         <p>Redirecting you to sign in…</p>
+        <p id="registerEmailNote" class="auth-email-note" hidden aria-live="polite"></p>
       </div>
 
       <div class="auth-switch">
@@ -362,6 +369,7 @@
   const form       = document.getElementById("registerForm");
   const btn        = document.getElementById("registerBtn");
   const successBox = document.getElementById("registerSuccess");
+  const emailNote  = document.getElementById("registerEmailNote");
   const generalErr = document.getElementById("generalError");
 
   const fields = {
@@ -479,9 +487,20 @@
       .then(r => r.json())
       .then(data => {
         if (data.success) {
-          form.hidden      = true;
+          form.hidden       = true;
           successBox.hidden = false;
-          setTimeout(() => window.location.href = "login.php", 1800);
+          if (emailNote) {
+            if (data.emailSent) {
+              emailNote.textContent = "✓ Welcome email sent to your inbox.";
+              emailNote.style.color = "#2e7d32";
+              emailNote.hidden = false;
+            } else if (data.emailError) {
+              emailNote.textContent = "⚠ " + data.emailError;
+              emailNote.style.color = "#b26a00";
+              emailNote.hidden = false;
+            }
+          }
+          setTimeout(() => window.location.href = "login.php", 2200);
         } else {
           if (data.errors) {
             Object.entries(data.errors).forEach(([k, v]) => {

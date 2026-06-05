@@ -17,6 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once __DIR__ . '/../server/db_config.php';
 require_once __DIR__ . '/../server/includes/password_policy.php';
+require_once __DIR__ . '/../server/includes/mailer.php';
+require_once __DIR__ . '/../server/includes/db_log.php';
+
+if ($conn === null) {
+    http_response_code(503);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database unavailable. Check server/db_config.php and ensure MySQL is reachable.',
+    ]);
+    exit;
+}
 
 $fullName = trim($_POST['full_name'] ?? '');
 $email    = trim($_POST['email']     ?? '');
@@ -84,7 +95,59 @@ if (!$stmt->execute()) {
     exit;
 }
 
+$userId = $conn->insert_id;
 $stmt->close();
+
+// ── Welcome email ──
+$safeName  = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
+$safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+
+$emailBody = <<<HTML
+<p style="margin:0 0 16px;color:#444;line-height:1.6;">
+  Hi <strong>{$safeName}</strong>,<br />
+  Welcome to <strong>ShipSmart</strong> — your universal shipment tracker for Aramex, DHL, FedEx, and SMSA.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="border-collapse:collapse;font-size:14px;margin-bottom:20px;">
+  <tr style="background:#f8f4fb;">
+    <td style="padding:10px 14px;border:1px solid #ece6f0;
+               font-weight:600;color:#7b2b6a;width:40%;">Account Email</td>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$safeEmail}</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;
+               font-weight:600;color:#7b2b6a;">Role</td>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">User</td>
+  </tr>
+</table>
+
+<p style="margin:0 0 10px;color:#444;line-height:1.6;">
+  You can now sign in to search shipments, upload documents, and manage your profile.
+</p>
+<p style="margin:0;color:#444;">— The ShipSmart Team</p>
+HTML;
+
+$subject   = "Welcome to ShipSmart, {$fullName}!";
+$emailHtml = buildEmailTemplate('Welcome to ShipSmart!', $emailBody);
+$emailSent = sendMail($email, $fullName, $subject, $emailHtml);
+
+logEmail(
+    $conn,
+    $email,
+    $subject,
+    'other',
+    $emailSent ? 'sent' : 'failed',
+    $userId,
+    'users',
+    $userId
+);
+
 $conn->close();
 
-echo json_encode(['success' => true, 'message' => 'Account created! You can now log in.']);
+echo json_encode([
+    'success'    => true,
+    'message'    => 'Account created! You can now log in.',
+    'emailSent'  => $emailSent,
+    'emailError' => $emailSent ? null : 'Account created, but welcome email could not be sent.',
+]);
