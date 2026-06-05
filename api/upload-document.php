@@ -73,8 +73,10 @@ if ($docType === '' || !in_array($docType, $allowedDocTypes, true)) {
     $errors['doc_type'] = 'Please select a document type.';
 }
 
-// Email — optional, but must be valid format if provided
-if ($uploaderEmail !== '' && !filter_var($uploaderEmail, FILTER_VALIDATE_EMAIL)) {
+// Email — required for upload confirmation notification
+if ($uploaderEmail === '') {
+    $errors['uploader_email'] = 'Email is required to send your upload confirmation.';
+} elseif (!filter_var($uploaderEmail, FILTER_VALIDATE_EMAIL)) {
     $errors['uploader_email'] = 'Please enter a valid email address.';
 }
 
@@ -186,7 +188,7 @@ if (!$stmt->execute()) {
 $docId = $conn->insert_id;
 $stmt->close();
 
-// ── Send upload confirmation email if address was provided ──
+// ── Send upload confirmation email ──
 $emailSent  = false;
 $emailError = null;
 

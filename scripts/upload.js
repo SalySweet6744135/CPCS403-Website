@@ -29,11 +29,13 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
   const carrierError  = document.getElementById("carrierError");
   const docTypeError  = document.getElementById("docTypeError");
   const fileError     = document.getElementById("fileError");
+  const emailError    = document.getElementById("emailError");
 
   // Form fields
   const trackingInput = document.getElementById("trackingNumber");
   const carrierSelect = document.getElementById("carrier");
   const docTypeSelect = document.getElementById("docType");
+  const emailInput    = document.getElementById("uploaderEmail");
 
   const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -52,7 +54,7 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
 
   // ── Client-side validation ──
   const validate = () => {
-    clrErr(trackingError, carrierError, docTypeError, fileError);
+    clrErr(trackingError, carrierError, docTypeError, fileError, emailError);
     let ok = true;
 
     // Tracking number: 5–50 alphanumeric + hyphens
@@ -74,6 +76,16 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
     // Document type
     if (!docTypeSelect?.value) {
       setErr(docTypeError, "Please select a document type.");
+      ok = false;
+    }
+
+    // Email (confirmation)
+    const email = (emailInput?.value || "").trim();
+    if (email === "") {
+      setErr(emailError, "Email is required to send your upload confirmation.");
+      ok = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setErr(emailError, "Please enter a valid email address.");
       ok = false;
     }
 
@@ -181,6 +193,7 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
           setErr(carrierError,  data.errors.carrier         || "");
           setErr(docTypeError,  data.errors.doc_type        || "");
           setErr(fileError,     data.errors.document        || "");
+          setErr(emailError,    data.errors.uploader_email  || "");
         } else {
           setErr(fileError, data.message || "Upload failed. Please try again.");
         }
@@ -191,7 +204,7 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
       .finally(() => {
         if (uploadBtn) {
           uploadBtn.disabled = false;
-          uploadBtn.textContent = "Upload Document";
+          uploadBtn.textContent = "Upload & Send Confirmation";
         }
       });
   });
@@ -213,9 +226,11 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
       `<p><strong>Size:</strong> ${data.file_size_kb} KB</p>`;
 
     if (data.emailSent) {
-      metaHtml += `<p style="color:#2e7d32;">&#10003; Confirmation email sent.</p>`;
+      metaHtml += `<p style="color:#2e7d32;">&#10003; Confirmation email sent to your inbox.</p>`;
     } else if (data.emailError) {
       metaHtml += `<p style="color:#b26a00;">&#9888; ${data.emailError}</p>`;
+    } else {
+      metaHtml += `<p style="color:#b26a00;">&#9888; Document saved, but confirmation email could not be sent.</p>`;
     }
 
     if (successMeta) {
@@ -237,7 +252,7 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
   // ── "Upload Another" resets the form back to its empty state ──
   uploadAnotherBtn?.addEventListener("click", () => {
     uploadForm.reset();
-    clrErr(trackingError, carrierError, docTypeError, fileError);
+    clrErr(trackingError, carrierError, docTypeError, fileError, emailError);
     if (fileChosen) fileChosen.hidden = true;
 
     uploadForm.hidden = false;
