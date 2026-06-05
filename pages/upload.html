@@ -141,17 +141,29 @@ Purpose: Upload Documents page — attach shipment documents (invoice, receipt, 
             </div>
 
             <!-- Email for upload confirmation -->
-            <div class="field">
-              <label for="uploaderEmail">Your Email <span class="req">*</span></label>
+            <div class="field upload-email-field">
+              <div class="upload-email-head">
+                <span class="upload-email-icon" aria-hidden="true">✉</span>
+                <div>
+                  <label for="uploaderEmail">Email for confirmation <span class="req">*</span></label>
+                  <p class="upload-email-hint">We’ll email you a receipt with your tracking number, file name, and upload time.</p>
+                </div>
+              </div>
               <input
                 id="uploaderEmail"
                 name="uploader_email"
                 type="email"
-                placeholder="e.g., sara@example.com"
+                class="upload-email-input"
+                placeholder="name@example.com"
                 autocomplete="email"
+                inputmode="email"
+                spellcheck="false"
                 required
+                aria-describedby="emailHint"
               />
-              <p class="muted small" style="margin:6px 0 0">A confirmation email is sent after a successful upload.</p>
+              <p id="emailHint" class="upload-email-note">
+                <strong>Email notification:</strong> triggered automatically when you click Upload &amp; Send Confirmation.
+              </p>
               <p class="error" id="emailError" aria-live="polite"></p>
             </div>
 
@@ -192,13 +204,8 @@ Purpose: Upload Documents page — attach shipment documents (invoice, receipt, 
             <li>Formats: <strong>JPG, PNG, PDF</strong></li>
             <li>Max size: <strong>2 MB</strong></li>
             <li>One file per submission</li>
-            <li>Confirmation email sent to your address</li>
+            <li>Confirmation email with upload details</li>
           </ul>
-
-          <hr class="divider" />
-
-          <h3>Recently Uploaded</h3>
-          <p class="muted small" id="recentInfo">No documents uploaded yet this session.</p>
         </aside>
 
       </div>

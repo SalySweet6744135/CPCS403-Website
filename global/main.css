@@ -1458,6 +1458,84 @@ body.menu-open .nav-list{
   margin-left:2px;
 }
 
+/* Upload — email confirmation block */
+.upload-email-field{
+  margin-top:.25rem;
+  padding:1.15rem 1.25rem;
+  border-radius:var(--radius);
+  border:1px solid rgba(123,43,106,0.18);
+  background:
+    radial-gradient(420px 120px at 100% 0%, rgba(255,138,31,0.08), transparent 70%),
+    var(--soft);
+}
+.upload-email-head{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:12px;
+}
+.upload-email-icon{
+  flex-shrink:0;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  background:var(--primary);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.15rem;
+  line-height:1;
+}
+.upload-email-field label{
+  display:block;
+  font-weight:700;
+  font-size:.95rem;
+  margin:0 0 4px;
+  color:var(--primary);
+}
+.upload-email-hint{
+  margin:0;
+  font-size:.82rem;
+  color:var(--muted);
+  line-height:1.45;
+  max-width:42ch;
+}
+.upload-email-input{
+  width:100%;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1.5px solid var(--border);
+  font-size:1rem;
+  background:#fff;
+  transition:border-color .18s, box-shadow .18s;
+}
+.upload-email-input::placeholder{
+  color:#aaa;
+}
+.upload-email-input:hover{
+  border-color:rgba(123,43,106,0.35);
+}
+.upload-email-input:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(123,43,106,0.12);
+}
+.upload-email-note{
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:10px;
+  background:rgba(123,43,106,0.06);
+  border:1px solid rgba(123,43,106,0.1);
+  font-size:.8rem;
+  color:var(--muted);
+  line-height:1.45;
+}
+.upload-email-note strong{
+  color:var(--primary);
+  font-weight:700;
+}
+
 /* Ensure hidden attribute always works even when CSS sets display */
 [hidden] { display: none !important; }
 

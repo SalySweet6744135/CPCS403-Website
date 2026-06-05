@@ -22,7 +22,6 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
   const successMsg    = document.getElementById("successMsg");
   const successMeta   = document.getElementById("successMeta");
   const uploadAnotherBtn = document.getElementById("uploadAnotherBtn");
-  const recentInfo    = document.getElementById("recentInfo");
 
   // Error elements
   const trackingError = document.getElementById("trackingError");
@@ -39,9 +38,6 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
 
   const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
-
-  // Tracks how many docs uploaded this session (shown in sidebar)
-  let sessionCount = 0;
 
   // ── Helpers ──
   const setErr = (el, msg) => { if (el) el.textContent = msg; };
@@ -238,13 +234,6 @@ Purpose: Upload page script — client validation, drag-and-drop, and AJAX file 
     }
 
     if (uploadSuccess) uploadSuccess.hidden = false;
-
-    // Update sidebar session count
-    sessionCount++;
-    if (recentInfo) {
-      recentInfo.textContent =
-        `${sessionCount} document${sessionCount > 1 ? "s" : ""} uploaded this session.`;
-    }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
