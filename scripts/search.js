@@ -1,7 +1,11 @@
 /*
- * File: scripts/search.js
- * Purpose: Live search and filtering for ShipSmart shipments page
- */
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
+Section: CPCS403
+Date: 31-05-2026
+File: scripts/search.js
+Purpose: Search page script — debounced live search and filters via api/search.php
+*/
 
 (() => {
   "use strict";

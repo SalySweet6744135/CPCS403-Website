@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: server/includes/db_log.php
- * Purpose: Helpers to write audit / email / tracking logs to MySQL
+ * Purpose: Logging helpers — audit, email, login attempt, and tracking query logs
  */
-
 /**
  * Log a sent or failed email.
  */
@@ -52,6 +55,23 @@ function logAudit(mysqli $conn, string $action, ?int $userId = null, ?string $en
         return;
     }
     $stmt->bind_param('ississ', $userId, $action, $entityType, $entityId, $details, $ip);
+    $stmt->execute();
+    $stmt->close();
+}
+
+/**
+ * Record a login attempt (success or failure).
+ */
+function logLoginAttempt(mysqli $conn, string $email, bool $success, ?string $ip = null): void
+{
+    $stmt = $conn->prepare(
+        'INSERT INTO login_attempts (email, ip_address, was_success) VALUES (?, ?, ?)'
+    );
+    if (!$stmt) {
+        return;
+    }
+    $flag = $success ? 1 : 0;
+    $stmt->bind_param('ssi', $email, $ip, $flag);
     $stmt->execute();
     $stmt->close();
 }

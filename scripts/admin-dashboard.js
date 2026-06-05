@@ -1,13 +1,18 @@
 /*
- * File: scripts/admin-dashboard.js
- * Purpose: Admin dashboard — fetch shipments from api/admin/shipments.php (TrackingMore proxy).
- */
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
+Section: CPCS403
+Date: 31-05-2026
+File: scripts/admin-dashboard.js
+Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
+*/
 
 (() => {
   "use strict";
 
   const API_URL = "../api/admin/shipments.php";
   const ALLOWED_CARRIERS = ["aramex", "dhl", "fedex", "smsa", "smsa-express", "ups", "usps"];
+  const ALLOWED_STATUSES = ["created", "picked_up", "in_transit", "out_for_delivery", "delivered"];
   const TRACKING_RE = /^[A-Za-z0-9\-]{5,50}$/;
 
   const STATUS_COLORS = {
@@ -386,12 +391,14 @@
   const addFields = {
     tracking: document.getElementById("addTracking"),
     carrier: document.getElementById("addCarrier"),
+    status: document.getElementById("addStatus"),
     origin: document.getElementById("addOrigin"),
     dest: document.getElementById("addDest"),
   };
   const addErrors = {
     tracking: document.getElementById("addTrackingError"),
     carrier: document.getElementById("addCarrierError"),
+    status: document.getElementById("addStatusError"),
     route: document.getElementById("addRouteError"),
   };
 
@@ -401,6 +408,7 @@
     const inputMap = {
       tracking: addFields.tracking,
       carrier: addFields.carrier,
+      status: addFields.status,
     };
     const input = inputMap[key];
     if (input) input.classList.toggle("is-invalid", Boolean(msg));
@@ -424,6 +432,14 @@
       ok = false;
     } else if (!ALLOWED_CARRIERS.includes(carrier)) {
       setFieldErr("carrier", "Invalid carrier. Please select a supported courier.");
+      ok = false;
+    }
+    const status = (addFields.status?.value || "").trim().toLowerCase();
+    if (!status) {
+      setFieldErr("status", "Status is required.");
+      ok = false;
+    } else if (!ALLOWED_STATUSES.includes(status)) {
+      setFieldErr("status", "Please select a valid status.");
       ok = false;
     }
     const origin = (addFields.origin?.value || "").trim();

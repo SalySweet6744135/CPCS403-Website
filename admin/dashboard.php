@@ -1,11 +1,14 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: admin/dashboard.php
- * Purpose: Admin dashboard — shipments via api/admin/shipments.php (TrackingMore proxy)
+ * Purpose: Admin Dashboard — shipment CRUD via api/admin/shipments.php without page reload
  */
-
 require_once __DIR__ . '/../server/includes/auth.php';
-require_admin(1);
+require_admin();
 
 $adminName = htmlspecialchars($_SESSION['full_name'] ?? 'Admin', ENT_QUOTES, 'UTF-8');
 ?>
@@ -199,14 +202,13 @@ $adminName = htmlspecialchars($_SESSION['full_name'] ?? 'Admin', ENT_QUOTES, 'UT
       <nav class="nav" aria-label="Main navigation">
         <ul class="nav-list">
           <li><a class="nav-link" href="../index.html">Home</a></li>
-          <li><a class="nav-link" href="../pages/services.html">About</a></li>
-          <li><a class="nav-link" href="../pages/schedule.php">Schedule</a></li>
-          <li><a class="nav-link" href="../pages/search.html">Search</a></li>
-          <li><a class="nav-link" href="../pages/upload.html">Upload</a></li>
-          <li><a class="nav-link" href="../pages/video.html">Video</a></li>
-          <li><a class="nav-link" href="../pages/feedback.html">Feedback</a></li>
-          <li><a class="nav-link" href="../profile.php">Profile</a></li>
-          <li><a class="nav-link is-active" href="dashboard.php" style="color:var(--accent)">Dashboard</a></li>
+          <li><a class="nav-link" href="../pages/services.html">About Us</a></li>
+          <li><a class="nav-link" href="../pages/schedule.php">Shipping Schedule</a></li>
+          <li><a class="nav-link" href="../pages/search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="../pages/upload.html">Upload Documents</a></li>
+          <li><a class="nav-link" href="../pages/feedback.html">Share Feedback</a></li>
+          <li><a class="nav-link" href="../profile.php">My Profile</a></li>
+          <li><a class="nav-link is-active" href="dashboard.php" style="color:var(--accent)">Admin Dashboard</a></li>
         </ul>
       </nav>
       <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
@@ -350,10 +352,23 @@ $adminName = htmlspecialchars($_SESSION['full_name'] ?? 'Admin', ENT_QUOTES, 'UT
         </div>
         <div class="field-row">
           <div class="form-group">
+            <label for="addStatus">Status *</label>
+            <select name="status" id="addStatus" required>
+              <option value="created">Created</option>
+              <option value="picked_up">Picked Up</option>
+              <option value="in_transit">In Transit</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+            </select>
+            <p class="field-error" id="addStatusError" role="alert"></p>
+          </div>
+          <div class="form-group">
             <label for="addOrigin">Route — Origin City</label>
             <input type="text" id="addOrigin" name="origin_city" maxlength="80"
                    placeholder="e.g., Jeddah">
           </div>
+        </div>
+        <div class="field-row">
           <div class="form-group">
             <label for="addDest">Route — Destination City</label>
             <input type="text" id="addDest" name="destination_city" maxlength="80"

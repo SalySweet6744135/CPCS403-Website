@@ -1,13 +1,14 @@
 <?php
 /*
- * File: profile.php  (project root)
- * Purpose: Profile page — shows name, role, access level, and sign out.
- *          Accessible by both admin and regular user.
- *          Redirects to login if not signed in.
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: profile.php
+ * Purpose: My Profile page — shows user name, role, and account actions
  */
-
 require_once __DIR__ . '/server/includes/auth.php';
-require_login(0);
+require_login();
 
 $name    = htmlspecialchars($_SESSION['full_name'] ?? '', ENT_QUOTES, 'UTF-8');
 $role    = $_SESSION['role'] ?? 'user';
@@ -36,17 +37,16 @@ $initial = mb_strtoupper(mb_substr($_SESSION['full_name'] ?? 'U', 0, 1, 'UTF-8')
       <nav class="nav" aria-label="Main navigation">
         <ul class="nav-list">
           <li><a class="nav-link" href="index.html">Home</a></li>
-          <li><a class="nav-link" href="pages/services.html">About</a></li>
-          <li><a class="nav-link" href="pages/schedule.html">Schedule</a></li>
-          <li><a class="nav-link" href="pages/search.html">Search</a></li>
-          <li><a class="nav-link" href="pages/upload.html">Upload</a></li>
-          <li><a class="nav-link" href="pages/video.html">Video</a></li>
-          <li><a class="nav-link" href="pages/feedback.html">Feedback</a></li>
-          <li><a class="nav-link is-active" href="profile.php">Profile</a></li>
+          <li><a class="nav-link" href="pages/services.html">About Us</a></li>
+          <li><a class="nav-link" href="pages/schedule.php">Shipping Schedule</a></li>
+          <li><a class="nav-link" href="pages/search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="pages/upload.html">Upload Documents</a></li>
+          <li><a class="nav-link" href="pages/feedback.html">Share Feedback</a></li>
+          <li><a class="nav-link is-active" href="profile.php">My Profile</a></li>
           <?php if ($isAdmin): ?>
           <li>
             <a class="nav-link" href="admin/dashboard.php"
-               style="color:var(--accent);font-weight:900">Dashboard</a>
+               style="color:var(--accent);font-weight:900">Admin Dashboard</a>
           </li>
           <?php endif; ?>
         </ul>
@@ -107,11 +107,11 @@ $initial = mb_strtoupper(mb_substr($_SESSION['full_name'] ?? 'U', 0, 1, 'UTF-8')
             <!-- Action buttons -->
             <div class="profile-actions">
               <?php if ($isAdmin): ?>
-                <a class="btn-dashboard" href="admin/dashboard.php">Go to Dashboard</a>
+                <a class="btn-dashboard" href="admin/dashboard.php">Go to Admin Dashboard</a>
               <?php else: ?>
                 <a class="btn-dashboard" href="index.html">Back to Home</a>
               <?php endif; ?>
-              <a class="btn-signout" href="api/logout.php">Sign Out</a>
+              <a class="btn-signout" href="api/logout.php" id="signOutBtn">Sign Out</a>
             </div>
 
           </div>
@@ -136,12 +136,11 @@ $initial = mb_strtoupper(mb_substr($_SESSION['full_name'] ?? 'U', 0, 1, 'UTF-8')
           <p class="footer-title">Pages</p>
           <ul class="footer-links">
             <li><a href="index.html">Home</a></li>
-            <li><a href="pages/services.html">Services</a></li>
-            <li><a href="pages/schedule.html">Schedule</a></li>
-            <li><a href="pages/search.html">Search</a></li>
-            <li><a href="pages/upload.html">Upload</a></li>
-            <li><a href="pages/video.html">Video</a></li>
-            <li><a href="pages/feedback.html">Feedback</a></li>
+            <li><a href="pages/services.html">About Us</a></li>
+            <li><a href="pages/schedule.php">Shipping Schedule</a></li>
+            <li><a href="pages/search.html">Search Shipments</a></li>
+            <li><a href="pages/upload.html">Upload Documents</a></li>
+            <li><a href="pages/feedback.html">Share Feedback</a></li>
           </ul>
         </div>
       </div>

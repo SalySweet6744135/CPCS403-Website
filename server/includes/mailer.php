@@ -1,10 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: server/includes/mailer.php
- * Purpose: Shared email helper — sends HTML emails via PHP's mail()
- *          and provides a consistent ShipSmart branded email template.
+ * Purpose: Email helper — branded HTML templates and PHP mail() sender
  */
-
 /**
  * Send an HTML email using PHP's built-in mail().
  *

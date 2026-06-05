@@ -1,10 +1,10 @@
 <!--
-Name: Sama Salem Saloum
-ID: 2205679
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
 Section: CPCS403
-Date: 27-02-2026
+Date: 31-05-2026
 File: index.html
-Purpose: ShipSmart Home Page (Universal Shipment Tracker) - interactive landing page
+Purpose: ShipSmart Home Page — universal shipment tracker landing with hero, features, and navigation
 -->
 
 <!DOCTYPE html>
@@ -35,14 +35,13 @@ Purpose: ShipSmart Home Page (Universal Shipment Tracker) - interactive landing 
       <nav class="nav" aria-label="Main navigation">
         <ul class="nav-list">
           <li><a class="nav-link is-active" href="index.html">Home</a></li>
-          <li><a class="nav-link" href="pages/services.html">About</a></li>
-          <li><a class="nav-link" href="pages/ schedule.php">Schedule</a></li>
-          <li><a class="nav-link" href="pages/search.html">Search</a></li>
-          <li><a class="nav-link" href="pages/upload.html">Upload</a></li>
-          <li><a class="nav-link" href="pages/video.html">Video</a></li>
-          <li><a class="nav-link" href="pages/feedback.html">Feedback</a></li>
-          <li><a class="nav-link" href="Profile.php">Profile</a></li>
-          <li id="nav-dashboard" style="display:none"><a class="nav-link" href="admin/dashboard.php" style="color:var(--accent);font-weight:900">Dashboard</a></li>
+          <li><a class="nav-link" href="pages/services.html">About Us</a></li>
+          <li><a class="nav-link" href="pages/schedule.php">Shipping Schedule</a></li>
+          <li><a class="nav-link" href="pages/search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="pages/upload.html">Upload Documents</a></li>
+          <li><a class="nav-link" href="pages/feedback.html">Share Feedback</a></li>
+          <li><a class="nav-link" href="profile.php">My Profile</a></li>
+          <li id="nav-dashboard" style="display:none"><a class="nav-link" href="admin/dashboard.php" style="color:var(--accent);font-weight:900">Admin Dashboard</a></li>
         </ul>
       </nav>
 
@@ -61,9 +60,8 @@ Purpose: ShipSmart Home Page (Universal Shipment Tracker) - interactive landing 
       <img class="decor decor-light-1" src="images/pink light.svg" alt="" aria-hidden="true" />
       <img class="decor decor-light-2" src="images/yellow light.svg" alt="" aria-hidden="true" />
 
-      <div class="container hero-grid">
-        <!-- Left: copy + form -->
-        <div class="hero-left">
+      <div class="container hero-grid hero-grid-expanded">
+        <div class="hero-left hero-left-full">
           <p class="pill">
             <span class="dot"></span>
             Universal Shipment Tracker
@@ -74,115 +72,30 @@ Purpose: ShipSmart Home Page (Universal Shipment Tracker) - interactive landing 
           </h1>
 
           <p class="hero-subtitle">
-            Stop opening multiple tracking websites. Enter your tracking number, pick the carrier,
-            and get status, ETA, and a progress timeline instantly.
+            One beautiful dashboard for Aramex, DHL, FedEx, and SMSA — live search, clear ETAs,
+            and shipment timelines without jumping between carrier sites.
           </p>
 
-          <!-- Tracking form (JS + PHP compatible) -->
-          <form id="trackForm" class="card track-card" action="server/track.php" method="POST" novalidate>
-            <div class="field-grid">
-              <div class="field">
-                <label for="trackingNumber">Tracking Number</label>
-                <input
-                  id="trackingNumber"
-                  name="trackingNumber"
-                  type="text"
-                  placeholder="e.g., 1234567890"
-                  autocomplete="off"
-                  required
-                />
-                <p class="error" id="trackingError" aria-live="polite"></p>
-              </div>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-inline" href="pages/search.html">Search Shipments</a>
+            <a class="btn btn-ghost btn-inline" href="login.php">Sign In</a>
+            <a class="btn btn-ghost btn-inline" href="register.php">Create Account</a>
+          </div>
 
-              <div class="field">
-                <label for="carrier">Carrier</label>
-                <select id="carrier" name="carrier" required>
-                  <option value="" disabled selected>Select carrier</option>
-                  <option value="aramex">Aramex</option>
-                  <option value="dhl">DHL</option>
-                  <option value="fedex">FedEx</option>
-                  <option value="smsa">SMSA</option>
-                </select>
-                <p class="error" id="carrierError" aria-live="polite"></p>
-              </div>
+          <div class="hero-stats">
+            <div class="hero-stat card">
+              <strong>4+</strong>
+              <span class="muted">Major carriers</span>
             </div>
-
-            <div class="field inline">
-              <input type="checkbox" id="demoMode" name="demoMode" />
-              <label for="demoMode">Demo mode (show results on this page)</label>
+            <div class="hero-stat card">
+              <strong>Live</strong>
+              <span class="muted">Instant search</span>
             </div>
-
-            <button class="btn btn-primary" type="submit" id="trackBtn">Track Now</button>
-
-            <p class="small muted">
-              Demo mode is useful for the assignment demo even without real carrier APIs.
-            </p>
-          </form>
-        </div>
-
-        <!-- Right: illustration + result panel -->
-        <div class="hero-right">
-          <div class="illustration card">
-            <div class="illus-top">
-              <span class="chip">Live Progress</span>
-              <span class="chip chip-soft">Fast & Simple</span>
-            </div>
-
-            <!-- media wrapper so image fits perfectly -->
-            <div class="hero-media">
-              <img class="hero-illus" src="images/wherehouse pirbul boxes.svg" alt="Warehouse with boxes illustration" />
-            </div>
-
-            <!-- Result area (JS demo) -->
-            <div id="resultArea" class="result card-inner" hidden>
-              <div class="result-head">
-                <h2 class="result-title">Shipment Status</h2>
-                <span id="statusBadge" class="badge">Loading</span>
-              </div>
-
-              <div class="result-grid">
-                <p><strong>Carrier:</strong> <span id="rCarrier">—</span></p>
-                <p><strong>Tracking #:</strong> <span id="rTracking">—</span></p>
-                <p><strong>ETA:</strong> <span id="rEta">—</span></p>
-                <p><strong>Last Update:</strong> <span id="rUpdate">—</span></p>
-              </div>
-
-              <!-- Timeline (ordered list required usage) -->
-              <ol class="timeline" aria-label="Shipment progress timeline">
-                <li class="step" data-step="created"><span class="step-dot"></span>Shipment Created</li>
-                <li class="step" data-step="picked"><span class="step-dot"></span>Picked Up</li>
-                <li class="step" data-step="transit"><span class="step-dot"></span>In Transit</li>
-                <li class="step" data-step="out"><span class="step-dot"></span>Out for Delivery</li>
-                <li class="step" data-step="delivered"><span class="step-dot"></span>Delivered</li>
-              </ol>
-
-              <div class="result-actions">
-                <button class="btn" type="button" id="newSearchBtn">New Search</button>
-                <a class="btn btn-ghost" href="pages/feedback.html">Leave Feedback</a>
-              </div>
-            </div>
-
-            <!-- Loading box -->
-            <div id="loadingBox" class="loading" hidden>
-              <span class="spinner" aria-hidden="true"></span>
-              <span>Checking shipment status…</span>
+            <div class="hero-stat card">
+              <strong>Secure</strong>
+              <span class="muted">Accounts &amp; roles</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Supported carriers full width under BOTH cards -->
-      <div class="container">
-        <div class="container container-wide">
-        <div class="logos logos-wide">
-          <p class="logos-title">Supported carriers</p>
-          <div class="logos-row" aria-label="Carrier logos">
-            <img src="images/aramex logo.svg" alt="Aramex" class="logo" />
-            <img src="images/dhl logo.svg" alt="DHL" class="logo" />
-            <img src="images/fedex logo.svg" alt="FedEx" class="logo" />
-            <img src="images/smsa logo.svg" alt="SMSA" class="logo" />
-          </div>
-        </div>
         </div>
       </div>
     </section>
@@ -268,7 +181,7 @@ Purpose: ShipSmart Home Page (Universal Shipment Tracker) - interactive landing 
             <li><strong>View</strong> status, ETA, and timeline progress.</li>
           </ol>
 
-          <a class="btn btn-primary btn-inline" href="#trackForm">Try tracking now</a>
+          <a class="btn btn-primary btn-inline" href="pages/search.html">Try search now</a>
         </div>
 
         <div class="card how-card">
@@ -327,12 +240,11 @@ Purpose: ShipSmart Home Page (Universal Shipment Tracker) - interactive landing 
         <p class="footer-title">Pages</p>
         <ul class="footer-links">
           <li><a href="index.html">Home</a></li>
-          <li><a href="pages/services.html">Services</a></li>
-          <li><a href="pages/ schedule.php">Schedule</a></li>
-          <li><a href="pages/search.html">Search</a></li>
-          <li><a href="pages/upload.html">Upload</a></li>
-          <li><a href="pages/video.html">Video</a></li>
-          <li><a href="pages/feedback.html">Feedback</a></li>
+          <li><a href="pages/services.html">About Us</a></li>
+          <li><a href="pages/schedule.php">Shipping Schedule</a></li>
+          <li><a href="pages/search.html">Search Shipments</a></li>
+          <li><a href="pages/upload.html">Upload Documents</a></li>
+          <li><a href="pages/feedback.html">Share Feedback</a></li>
     
         </ul>
       </div>

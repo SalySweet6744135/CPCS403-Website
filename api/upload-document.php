@@ -1,11 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: api/upload-document.php
- * Purpose: Handle shipment document uploads — validate type/size, rename,
- *          save to uploads/documents/, and store metadata in the DB.
- *          Returns JSON so the frontend can update without a page reload.
+ * Purpose: Upload API — validate file type/size, save to uploads/documents/, store metadata
  */
-
 header('Content-Type: application/json');
 
 // Only allow POST requests

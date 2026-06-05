@@ -1,18 +1,18 @@
 <?php
 /*
- * Admin shipments API — proxies TrackingMore for the dashboard.
- * GET    → list shipments (trackings/get)
- * POST   → add (trackings/create)
- * PUT    → edit (trackings/update/{id})
- * DELETE → delete (trackings/delete/{id})
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: api/admin/shipments.php
+ * Purpose: Admin shipments API — TrackingMore proxy for GET, POST, PUT, DELETE
  */
-
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../server/includes/auth.php';
 require_once __DIR__ . '/../../server/includes/shipments_service.php';
 
-require_admin(1);
+require_admin();
 
 /** @return array<string, mixed> */
 function shipments_api_input(): array

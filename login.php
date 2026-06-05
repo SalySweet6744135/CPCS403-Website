@@ -1,7 +1,11 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: login.php
- * Purpose: Login page — split layout, branded left panel, clean form right.
+ * Purpose: Sign-in page — branded split layout with AJAX login to api/login.php
  */
 ?>
 <!DOCTYPE html>
@@ -272,46 +276,6 @@
     .auth-submit:active{ transform:scale(0.985); }
     .auth-submit:disabled{ opacity:0.6; cursor:not-allowed; filter:none; }
 
-    /* divider */
-    .auth-divider{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin:22px 0;
-      color:var(--muted);
-      font-size:0.8rem;
-    }
-    .auth-divider::before,
-    .auth-divider::after{
-      content:"";
-      flex:1;
-      height:1px;
-      background:var(--border);
-    }
-
-    /* demo credentials card */
-    .auth-demo{
-      border-radius:12px;
-      border:1px solid rgba(123,43,106,0.15);
-      background:var(--soft);
-      padding:14px 16px;
-    }
-    .auth-demo p{
-      margin:0 0 4px;
-      font-size:0.82rem;
-      color:var(--muted);
-    }
-    .auth-demo p:last-child{ margin:0; }
-    .auth-demo strong{ color:var(--primary); }
-    .auth-demo code{
-      background:rgba(123,43,106,0.1);
-      border-radius:5px;
-      padding:1px 6px;
-      font-size:0.8rem;
-      color:var(--primary);
-      font-family:monospace;
-    }
-
     /* switch link */
     .auth-switch{
       text-align:center;
@@ -437,14 +401,6 @@
         <button class="auth-submit" type="submit" id="loginBtn">Sign In</button>
       </form>
 
-      <div class="auth-divider">or</div>
-
-      <!-- Demo credentials -->
-      <div class="auth-demo">
-        <p><strong>Demo admin:</strong> <code>admin@shipsmart.com</code> / <code>Admin@1234</code></p>
-        <p>Register a new account to test the User role.</p>
-      </div>
-
       <div class="auth-switch">
         No account yet? <a href="register.php">Create one</a>
       </div>
@@ -505,7 +461,7 @@
     btn.disabled    = true;
     btn.textContent = "Signing in…";
 
-    fetch("api/login.php", { method: "POST", body: new FormData(form) })
+    fetch("api/login.php", { method: "POST", credentials: "include", body: new FormData(form) })
       .then(r => r.json())
       .then(data => {
         if (data.success) {

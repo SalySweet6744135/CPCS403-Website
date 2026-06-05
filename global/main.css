@@ -1,10 +1,10 @@
 /*
-Name: Sama Salem Saloum
-ID: 2205679
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
 Section: CPCS403
-Date: 27-02-2026
+Date: 31-05-2026
 File: global/main.css
-Purpose: Global styling for ShipSmart (Webflow-style landing page)
+Purpose: Global stylesheet — layout, components, and responsive styles for all pages
 */
 
 :root{
@@ -164,6 +164,30 @@ a:hover{ text-decoration:underline; }
   align-items:start;
 }
 
+.hero-grid-expanded{
+  grid-template-columns:1fr;
+}
+
+.hero-left-full{
+  width:100%;
+  max-width:none;
+}
+
+.hero-left-full .hero-title{
+  font-size:clamp(2.2rem, 4.5vw, 3.4rem);
+  max-width:18ch;
+}
+
+.hero-left-full .hero-subtitle{
+  max-width:68ch;
+  font-size:1.12rem;
+}
+
+.hero-left-full .hero-stats{
+  max-width:none;
+  grid-template-columns:repeat(3, minmax(140px, 1fr));
+}
+
 .pill{
   display:inline-flex;
   align-items:center;
@@ -194,9 +218,61 @@ a:hover{ text-decoration:underline; }
 .accent{ color:var(--primary); }
 
 .hero-subtitle{
-  margin:0 0 18px;
+  margin:0 0 22px;
   color:#2d2d2d;
   max-width: 60ch;
+  font-size:1.05rem;
+  line-height:1.65;
+}
+
+.hero-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:22px;
+}
+
+.hero-stats{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:12px;
+  max-width:520px;
+}
+
+.hero-stat{
+  padding:14px 16px;
+  text-align:left;
+}
+
+.hero-stat strong{
+  display:block;
+  font-size:1.35rem;
+  color:var(--primary);
+  margin-bottom:4px;
+}
+
+.hero-visual{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.hero-visual-footer{
+  padding:18px 18px 20px;
+  border-top:1px solid var(--border);
+  background:linear-gradient(180deg, #fff, #faf7fb);
+}
+
+.hero-visual-title{
+  margin:0 0 6px;
+  font-weight:900;
+  color:var(--primary);
+  font-size:1.05rem;
+}
+
+.hero-visual-footer .btn{
+  margin-top:14px;
+  width:100%;
 }
 
 /* ===================== CARDS / FORM ===================== */
@@ -656,6 +732,8 @@ cite{
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 980px){
   .hero-grid{ grid-template-columns: 1fr; }
+  .hero-stats{ grid-template-columns:1fr; max-width:none; }
+  .hero-actions .btn{ width:100%; text-align:center; }
   .field-grid{ grid-template-columns: 1fr; }
   .result-grid{ grid-template-columns: 1fr; }
   .grid-3{ grid-template-columns: 1fr; }

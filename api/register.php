@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: api/register.php
- * Purpose: Handle user registration — validate, hash password, insert to DB.
+ * Purpose: Registration API — validate input, hash password, insert user record
  */
-
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -13,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../server/db_config.php';
+require_once __DIR__ . '/../server/includes/password_policy.php';
 
 $fullName = trim($_POST['full_name'] ?? '');
 $email    = trim($_POST['email']     ?? '');
@@ -31,10 +35,9 @@ if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $errors['email'] = 'Please enter a valid email address.';
 }
 
-if (strlen($password) < 8) {
-    $errors['password'] = 'Password must be at least 8 characters.';
-} elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
-    $errors['password'] = 'Password must contain at least one uppercase letter and one number.';
+$passwordIssues = shipsmart_password_errors($password);
+if (!empty($passwordIssues)) {
+    $errors['password'] = implode(' ', $passwordIssues);
 }
 
 if ($password !== $confirm) {

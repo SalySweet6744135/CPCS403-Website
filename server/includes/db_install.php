@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: server/includes/db_install.php
- * Purpose: Auto-create missing tables/columns on connect (XAMPP-friendly)
+ * Purpose: Schema installer — auto-create missing tables and upload directory on connect
  */
-
 /**
  * Ensure upload directory exists and is writable.
  */

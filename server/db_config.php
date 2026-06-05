@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: server/db_config.php
- * Purpose: MySQL database connection configuration
+ * Purpose: Database configuration — MySQL connection settings for local development
  */
-
 // ── Database credentials ──
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'shipsmart_db');

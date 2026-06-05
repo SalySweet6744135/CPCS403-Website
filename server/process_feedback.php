@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: server/process_feedback.php
- * Purpose: Receive feedback form data via POST, validate, and store in MySQL
+ * Purpose: Feedback processor — validate form, save to MySQL, send confirmation email
  */
-
 // Suppress PHP warnings from appearing in JSON output
 ini_set('display_errors', 0);
 error_reporting(0);

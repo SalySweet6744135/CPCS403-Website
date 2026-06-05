@@ -1,8 +1,11 @@
 /*
- * File: scripts/upload.js
- * Purpose: Handle the document upload form on pages/upload.html
- *          — client-side validation, drag-and-drop, AJAX upload via Fetch API (no page reload)
- */
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
+Section: CPCS403
+Date: 31-05-2026
+File: scripts/upload.js
+Purpose: Upload page script — client validation, drag-and-drop, and AJAX file upload
+*/
 
 (() => {
   "use strict";

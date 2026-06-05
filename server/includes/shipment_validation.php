@@ -1,12 +1,20 @@
 <?php
-/**
- * Input validation for TrackingMore create tracking (POST /v4/trackings/create).
- * Maps rules to API meta codes documented in trackingmore-sdk-php README.
+/*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: server/includes/shipment_validation.php
+ * Purpose: Shipment validation — input rules for TrackingMore create/update requests
  */
-
 function shipment_allowed_carriers(): array
 {
     return ['aramex', 'dhl', 'fedex', 'smsa', 'smsa-express', 'ups', 'usps'];
+}
+
+function shipment_allowed_statuses(): array
+{
+    return ['created', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered'];
 }
 
 /**
@@ -49,6 +57,11 @@ function validate_add_shipment(array $input): array
     $weight = trim((string) ($input['weight_kg'] ?? ''));
     $eta    = trim((string) ($input['estimated_delivery'] ?? ''));
     $note   = trim((string) ($input['note'] ?? ''));
+    $status = strtolower(trim((string) ($input['status'] ?? 'created')));
+
+    if (!in_array($status, shipment_allowed_statuses(), true)) {
+        $errors['status'] = 'Please select a valid shipment status.';
+    }
 
     if (strlen($origin) > 80 || strlen($dest) > 80) {
         $errors['route'] = 'Origin and destination must be 80 characters or fewer.';
@@ -96,6 +109,7 @@ function validate_add_shipment(array $input): array
         'errors'        => $errors,
         'params'        => $params,
         'update_params' => $updateParams,
+        'status'        => $status,
     ];
 }
 

@@ -1,35 +1,28 @@
 /*
-Name: Sama Salem Saloum
-ID: 2205679
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
 Section: CPCS403
-Date: 27-02-2026
-
-Member 1:
-  Name: Wareef Alzubaidi
-  Student ID: 2207221
-  Section: DAR
-
-Member 2:
-  Name: Sama Salem Salloum
-  Student ID: 2205679
-  Section: DAR
-
-Member 3:
-  Name: Manar Abdullah Alharbi
-  Student ID: 2206712
-  Section: DAR
-
+Date: 31-05-2026
 File: scripts/main.js
-Purpose: JavaScript functionality — navigation toggle, tracking form validation, demo mode results, timeline rendering, and feedback form validation with success handling.
+Purpose: Global JavaScript — navigation toggle, feedback form AJAX, session-aware nav links
 */
 
 (function () {
   "use strict";
 
+  /** Root-relative prefix for API calls (works from /, /pages/, /admin/). */
+  const apiRoot = (() => {
+    const path = window.location.pathname || "";
+    if (path.includes("/pages/") || path.includes("/admin/")) return "..";
+    return ".";
+  })();
+
+  const apiUrl = (endpoint) => `${apiRoot}/${endpoint.replace(/^\//, "")}`;
+
   // Show Dashboard nav item for admins when page is static HTML
   (function revealAdminNav(){
     try{
-      fetch('/403/api/whoami.php', { credentials: 'include' })
+      fetch(apiUrl("api/whoami.php"), { credentials: 'include' })
         .then(r => r.json())
         .then(j => {
           if (j && j.role === 'admin') {
@@ -150,39 +143,96 @@ Purpose: JavaScript functionality — navigation toggle, tracking form validatio
     { status: "Delivered", type: "ok", step: "delivered", etaDays: 0 },
   ];
 
-  const renderDemo = () => {
+  const statusToTimeline = (status) => {
+    const s = String(status || "").toLowerCase().replace(/[\s-]/g, "_");
+    if (s.includes("deliver")) return "delivered";
+    if (s.includes("out_for") || s === "out") return "out";
+    if (s.includes("transit") || s.includes("picked")) return s.includes("picked") ? "picked" : "transit";
+    return "created";
+  };
+
+  const statusToBadge = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s.includes("deliver")) return { text: "Delivered", type: "ok" };
+    if (s.includes("out_for") || s.includes("out for")) return { text: "Out for Delivery", type: "warn" };
+    if (s.includes("transit")) return { text: "In Transit", type: "info" };
+    if (s.includes("picked")) return { text: "Picked Up", type: "info" };
+    return { text: status || "Found", type: "info" };
+  };
+
+  const renderShipmentResult = (shipment) => {
     showLoading(false);
-
-    const pick = demo[Math.floor(Math.random() * demo.length)];
-    const now = new Date();
-
-    const eta = new Date(now);
-    eta.setDate(eta.getDate() + pick.etaDays);
-
-    if (rCarrier) rCarrier.textContent = labelCarrier(carrierSelect?.value);
-    if (rTracking) rTracking.textContent = trackingInput?.value.trim().toUpperCase();
-    if (rEta) rEta.textContent = pick.etaDays === 0 ? "Delivered" : eta.toDateString();
-    if (rUpdate) rUpdate.textContent = now.toLocaleString();
-
-    setBadge(pick.status, pick.type);
-    setTimeline(pick.step);
-
+    const carrierVal = shipment.carrier || carrierSelect?.value;
+    if (rCarrier) rCarrier.textContent = labelCarrier(carrierVal);
+    if (rTracking) rTracking.textContent = (shipment.tracking_number || trackingInput?.value || "").trim().toUpperCase();
+    if (rEta) {
+      const eta = shipment.estimated_delivery;
+      rEta.textContent = eta ? new Date(eta + "T00:00:00").toLocaleDateString() : "—";
+    }
+    if (rUpdate) {
+      rUpdate.textContent = shipment.last_updated
+        ? new Date(shipment.last_updated).toLocaleString()
+        : new Date().toLocaleString();
+    }
+    const badge = statusToBadge(shipment.status);
+    setBadge(badge.text, badge.type);
+    setTimeline(statusToTimeline(shipment.status));
     showResult(true);
   };
 
-  // ===== Demo-mode checkbox: visual feedback only =====
-  const trackBtn = document.getElementById("trackBtn");
+  const renderDemo = () => {
+    const pick = demo[Math.floor(Math.random() * demo.length)];
+    const now = new Date();
+    const eta = new Date(now);
+    eta.setDate(eta.getDate() + pick.etaDays);
 
-  const syncTrackBtn = () => {
-    if (!trackBtn || !demoMode) return;
-    const enabled = demoMode.checked;
-    trackBtn.style.opacity = enabled ? "" : "0.45";
-    trackBtn.style.cursor = enabled ? "" : "not-allowed";
+    renderShipmentResult({
+      carrier: carrierSelect?.value,
+      tracking_number: trackingInput?.value,
+      estimated_delivery: pick.etaDays === 0 ? now.toISOString().slice(0, 10) : eta.toISOString().slice(0, 10),
+      last_updated: now.toISOString(),
+      status: pick.status,
+    });
+    setBadge(pick.status, pick.type);
+    setTimeline(pick.step);
   };
 
-  demoMode?.addEventListener("change", syncTrackBtn);
-  demoMode?.addEventListener("click", syncTrackBtn);
-  syncTrackBtn();
+  const trackViaApi = () => {
+    showResult(false);
+    resetTimeline();
+    clearErrors();
+    setBadge("Loading", "info");
+    showLoading(true);
+
+    const q = (trackingInput?.value || "").trim();
+    const carrier = carrierSelect?.value || "";
+    const params = new URLSearchParams({ q });
+    if (carrier) params.set("carrier", carrier);
+
+    fetch(`${apiUrl("api/search.php")}?${params.toString()}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Search failed");
+        return res.json();
+      })
+      .then((data) => {
+        showLoading(false);
+        if (!Array.isArray(data) || data.length === 0) {
+          setBadge("Not Found", "warn");
+          if (trackingError) {
+            trackingError.textContent = "No shipment found in the database for this tracking number.";
+          }
+          return;
+        }
+        renderShipmentResult(data[0]);
+      })
+      .catch(() => {
+        showLoading(false);
+        setBadge("Error", "warn");
+        if (trackingError) trackingError.textContent = "Could not reach the search API. Is PHP running?";
+      });
+  };
+
+  const trackBtn = document.getElementById("trackBtn");
 
   // ===== Nav toggle =====
   navToggle?.addEventListener("click", () => {
@@ -228,34 +278,25 @@ Purpose: JavaScript functionality — navigation toggle, tracking form validatio
   // initial
   setupSideNav();
 
-  // ===== Track button =====
+  // ===== Track button — Fetch API → api/search.php (or demo mode) =====
   const doTrack = () => {
-    const isDemoChecked = !!document.getElementById("demoMode")?.checked;
-    const hint = document.getElementById("demohint");
-
-    if (!isDemoChecked) {
-      if (hint) hint.style.display = "block";
+    if (!validate()) return;
+    if (demoMode?.checked) {
+      showResult(false);
+      resetTimeline();
+      setBadge("Loading", "info");
+      showLoading(true);
+      setTimeout(renderDemo, 600);
       return;
     }
-    if (hint) hint.style.display = "none";
-
-    if (!validate()) return;
-
-    showResult(false);
-    resetTimeline();
-    setBadge("Loading", "info");
-    showLoading(true);
-    setTimeout(() => {
-      showLoading(false);
-      renderDemo();
-    }, 900);
+    trackViaApi();
   };
 
   trackBtn?.addEventListener("click", doTrack);
 
-  // Prevent native form submission
   trackForm?.addEventListener("submit", (e) => {
     e.preventDefault();
+    doTrack();
   });
 
   newSearchBtn?.addEventListener("click", () => {
@@ -414,6 +455,40 @@ Purpose: JavaScript functionality — navigation toggle, tracking form validatio
 
     const submitBtn = document.getElementById("submitBtn");
 
+    const feedbackEmailNote = document.getElementById("feedbackEmailNote");
+
+    const showFeedbackSuccess = (data = {}) => {
+      if (!fSuccess) return;
+      if (feedbackEmailNote) {
+        if (data.emailSent) {
+          feedbackEmailNote.textContent = "✓ Confirmation email sent.";
+          feedbackEmailNote.style.color = "#2e7d32";
+          feedbackEmailNote.hidden = false;
+        } else if (data.emailError) {
+          feedbackEmailNote.textContent = "⚠ " + data.emailError;
+          feedbackEmailNote.style.color = "#b26a00";
+          feedbackEmailNote.hidden = false;
+        } else {
+          feedbackEmailNote.textContent = "";
+          feedbackEmailNote.hidden = true;
+        }
+      }
+      if (fSuccess.parentElement !== document.body) {
+        document.body.appendChild(fSuccess);
+      }
+      fSuccess.hidden = false;
+      fSuccess.style.display = "flex";
+      fSuccess.style.position = "fixed";
+      fSuccess.style.inset = "0";
+      fSuccess.style.zIndex = "10000";
+      const modalBox = fSuccess.querySelector(".modal-box");
+      if (modalBox) {
+        modalBox.setAttribute("tabindex", "-1");
+        modalBox.focus();
+      }
+      document.body.style.overflow = "hidden";
+    };
+
     const handleSubmit = (e) => {
       if (e && e.cancelable) e.preventDefault();
       if (!validateFeedback()) {
@@ -422,33 +497,35 @@ Purpose: JavaScript functionality — navigation toggle, tracking form validatio
         return;
       }
 
-      feedbackForm.reset();
-      clrErr(firstNameErr, lastNameErr, emailErr, ratingErr, servicesErr, carrierPErr);
-      if (fCharCount) fCharCount.textContent = "0 / " + MAX_CHARS + " characters";
+      const fd = new FormData(feedbackForm);
+      const first = (fFirstName?.value || "").trim();
+      const last = (fLastName?.value || "").trim();
+      fd.set("fullName", `${first} ${last}`.trim());
 
-      if (fSuccess) {
-        // move overlay to document body to avoid being constrained by parent containers
-        if (fSuccess.parentElement !== document.body) {
-          document.body.appendChild(fSuccess);
-        }
-        // show overlay by removing hidden and ensure it's visible
-        fSuccess.hidden = false;
-        fSuccess.style.display = "flex";
-        fSuccess.style.position = "fixed";
-        fSuccess.style.top = 0;
-        fSuccess.style.left = 0;
-        fSuccess.style.right = 0;
-        fSuccess.style.bottom = 0;
-        fSuccess.style.zIndex = 10000;
-        // set focus to modal box for accessibility
-        const modalBox = fSuccess.querySelector('.modal-box');
-        if (modalBox) {
-          modalBox.setAttribute('tabindex', '-1');
-          modalBox.focus();
-        }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting…";
       }
-      // prevent background scroll
-      document.body.style.overflow = "hidden";
+
+      fetch(apiUrl("api/feedback.php"), { method: "POST", body: fd })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!data.success) {
+            alert(data.message || "Submission failed. Please try again.");
+            return;
+          }
+          feedbackForm.reset();
+          clrErr(firstNameErr, lastNameErr, emailErr, ratingErr, servicesErr, carrierPErr);
+          if (fCharCount) fCharCount.textContent = "0 / " + MAX_CHARS + " characters";
+          showFeedbackSuccess(data);
+        })
+        .catch(() => alert("Network error. Please try again."))
+        .finally(() => {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit Feedback";
+          }
+        });
     };
 
     submitBtn?.addEventListener("click", handleSubmit);
@@ -463,15 +540,15 @@ Purpose: JavaScript functionality — navigation toggle, tracking form validatio
 
     const submitAnotherBtn = document.getElementById("submitAnotherBtn");
     submitAnotherBtn?.addEventListener("click", () => {
+      if (feedbackEmailNote) {
+        feedbackEmailNote.textContent = "";
+        feedbackEmailNote.hidden = true;
+      }
       if (fSuccess) {
         fSuccess.hidden = true;
         fSuccess.style.display = "none";
-        // remove inline positioning styles
         fSuccess.style.position = "";
-        fSuccess.style.top = "";
-        fSuccess.style.left = "";
-        fSuccess.style.right = "";
-        fSuccess.style.bottom = "";
+        fSuccess.style.inset = "";
         fSuccess.style.zIndex = "";
       }
       document.body.style.overflow = "";
@@ -479,4 +556,21 @@ Purpose: JavaScript functionality — navigation toggle, tracking form validatio
       fFirstName?.focus();
     });
   }
+
+  // Sign out via Fetch API (no full page reload to logout.php)
+  document.querySelector(".btn-signout")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    fetch(apiUrl("api/logout.php"), {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        window.location.href = data.redirect || apiUrl("login.php");
+      })
+      .catch(() => {
+        window.location.href = apiUrl("login.php");
+      });
+  });
 })();

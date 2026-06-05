@@ -1,9 +1,12 @@
 <?php
-/**
- * File-based overlay for TrackingMore fields not returned by trackings/get (weight, ETA).
- * Stored in server/data/shipment_tracking_meta.json — no database.
+/*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: server/includes/shipment_meta_store.php
+ * Purpose: Shipment metadata store — JSON overlay for weight and ETA fields
  */
-
 function shipment_meta_json_path(): string
 {
     return dirname(__DIR__) . '/data/shipment_tracking_meta.json';
@@ -53,6 +56,8 @@ function shipment_meta_load_all(): array
                 ? (string) $row['weight_kg'] : null,
             'estimated_delivery' => isset($row['estimated_delivery']) && $row['estimated_delivery'] !== ''
                 ? (string) $row['estimated_delivery'] : null,
+            'status'             => isset($row['status']) && $row['status'] !== ''
+                ? (string) $row['status'] : null,
         ];
     }
 
@@ -79,6 +84,9 @@ function shipment_meta_upsert(
     $eta      = array_key_exists('estimated_delivery', $fields)
         ? $fields['estimated_delivery']
         : ($existing[$trackingmoreId]['estimated_delivery'] ?? null);
+    $status   = array_key_exists('status', $fields)
+        ? $fields['status']
+        : ($existing[$trackingmoreId]['status'] ?? null);
 
     $all = shipment_meta_json_load();
     $all[$trackingmoreId] = [
@@ -86,6 +94,7 @@ function shipment_meta_upsert(
         'courier_code'       => $courierCode,
         'weight_kg'          => ($weight !== null && $weight !== '') ? (string) $weight : null,
         'estimated_delivery' => ($eta !== null && $eta !== '') ? (string) $eta : null,
+        'status'             => ($status !== null && $status !== '') ? (string) $status : null,
     ];
     shipment_meta_json_save($all);
 }
@@ -122,6 +131,9 @@ function shipment_meta_merge_list(array $shipments): array
         }
         if ($m['estimated_delivery'] !== null) {
             $s['estimated_delivery'] = $m['estimated_delivery'];
+        }
+        if ($m['status'] !== null) {
+            $s['status'] = $m['status'];
         }
     }
     unset($s);

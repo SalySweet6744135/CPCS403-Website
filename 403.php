@@ -1,7 +1,11 @@
 <?php
 /*
- * File: 403.php  (project root)
- * Purpose: Shown when a non-admin tries to access an admin page.
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: 403.php
+ * Purpose: Access denied page — shown when non-admin users reach admin-only areas
  */
 ?>
 <!DOCTYPE html>

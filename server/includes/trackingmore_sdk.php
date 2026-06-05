@@ -1,8 +1,12 @@
 <?php
-/**
- * Load TrackingMore PHP SDK (manual install).
+/*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: server/includes/trackingmore_sdk.php
+ * Purpose: TrackingMore SDK loader — manual bootstrap for courier and tracking classes
  */
-
 function trackingmore_load_sdk(): void
 {
     static $loaded = false;

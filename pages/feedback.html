@@ -1,29 +1,15 @@
 <!--
-Member 1:
-  Name: Wareef Alzubaidi
-  Student ID: 2207221
-  Section: DAR
-
-Member 2:
-  Name: Sama Salem Salloum
-  Student ID: 2205679
-  Section: DAR
-
-Member 3:
-  Name: Manar Abdullah Alharbi
-  Student ID: 2206712
-  Section: DAR
-
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
+Section: CPCS403
+Date: 31-05-2026
 File: pages/feedback.html
-Purpose: ShipSmart Feedback Page — user feedback form with client-side validation (name, email, rating, services used, preferred carrier, comments) and success message.
+Purpose: Share Feedback page — user feedback form with validation and confirmation email
 -->
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShipSmart | Feedback</title>
@@ -47,14 +33,13 @@ Purpose: ShipSmart Feedback Page — user feedback form with client-side validat
       <nav class="nav" aria-label="Main navigation">
         <ul class="nav-list">
           <li><a class="nav-link" href="../index.html">Home</a></li>
-          <li><a class="nav-link" href="services.html">About</a></li>
-          <li><a class="nav-link" href=" schedule.php">Schedule</a></li>
-          <li><a class="nav-link" href="search.html">Search</a></li>
-          <li><a class="nav-link" href="upload.html">Upload</a></li>
-          <li><a class="nav-link" href="video.html">Video</a></li>
-          <li><a class="nav-link is-active" href="feedback.html">Feedback</a></li>
-          <li><a class="nav-link" href="../Profile.php">Profile</a></li>
-          <li id="nav-dashboard" style="display:none"><a class="nav-link" href="../admin/dashboard.php" style="color:var(--accent);font-weight:900">Dashboard</a></li>
+          <li><a class="nav-link" href="services.html">About Us</a></li>
+          <li><a class="nav-link" href="schedule.php">Shipping Schedule</a></li>
+          <li><a class="nav-link" href="search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="upload.html">Upload Documents</a></li>
+          <li><a class="nav-link is-active" href="feedback.html">Share Feedback</a></li>
+          <li><a class="nav-link" href="../profile.php">My Profile</a></li>
+          <li id="nav-dashboard" style="display:none"><a class="nav-link" href="../admin/dashboard.php" style="color:var(--accent);font-weight:900">Admin Dashboard</a></li>
         </ul>
       </nav>
 
@@ -215,6 +200,7 @@ Purpose: ShipSmart Feedback Page — user feedback form with client-side validat
           <div class="modal-icon" aria-hidden="true">✓</div>
           <h2 id="successTitle">Thank You!</h2>
           <p>Your feedback has been submitted successfully.<br>We appreciate your time!</p>
+          <p id="feedbackEmailNote" class="small muted" hidden aria-live="polite"></p>
           <div class="modal-actions">
             <a class="btn btn-primary btn-inline" href="../index.html">Back to Home</a>
             <button class="btn btn-ghost" type="button" id="submitAnotherBtn">Submit Another</button>
@@ -242,12 +228,11 @@ Purpose: ShipSmart Feedback Page — user feedback form with client-side validat
         <p class="footer-title">Pages</p>
          <ul class="footer-links">
           <li><a href="../index.html">Home</a></li>
-          <li><a href="services.html">About</a></li>
-          <li><a href=" schedule.php">Schedule</a></li>
-          <li><a href="search.html">Search</a></li>
-          <li><a href="upload.html">Upload</a></li>
-          <li><a href="video.html">Video</a></li>
-          <li><a href="feedback.html">Feedback</a></li>
+          <li><a href="services.html">About Us</a></li>
+          <li><a href="schedule.php">Shipping Schedule</a></li>
+          <li><a href="search.html">Search Shipments</a></li>
+          <li><a href="upload.html">Upload Documents</a></li>
+          <li><a href="feedback.html">Share Feedback</a></li>
         </ul>
       </div>
     </div>
@@ -261,70 +246,6 @@ Purpose: ShipSmart Feedback Page — user feedback form with client-side validat
   </div>
 </footer>
 
-    <!-- External JS (includes feedback validation) -->
-    <script src="../scripts/main.js?v=3"></script>
-  <script>
-  // Runs after main.js — replaces the submit button listener with one that
-  // actually POSTs to process_feedback.php via fetch.
-  window.addEventListener("load", function () {
-    var submitBtn   = document.getElementById("submitBtn");
-    var feedbackForm = document.getElementById("feedbackForm");
-    var fSuccess    = document.getElementById("feedbackSuccess");
-    if (!submitBtn || !feedbackForm) return;
-
-    // Remove all existing listeners by cloning the button
-    var newBtn = submitBtn.cloneNode(true);
-    submitBtn.parentNode.replaceChild(newBtn, submitBtn);
-
-    newBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-
-      // Basic required field check
-      var firstName = (document.getElementById("firstName") || {}).value || "";
-      var lastName  = (document.getElementById("lastName")  || {}).value || "";
-      var email     = (document.getElementById("email")     || {}).value || "";
-      var rating    = feedbackForm.querySelector("input[name='rating']:checked");
-      var services  = feedbackForm.querySelectorAll("input[name='services[]']:checked");
-      var carrier   = (document.getElementById("preferredCarrier") || {}).value || "";
-
-      firstName = firstName.trim();
-      lastName  = lastName.trim();
-      email     = email.trim();
-
-      if (!firstName || !lastName || !email || !rating || services.length === 0 || !carrier) {
-        alert("Please fill in all required fields.");
-        return;
-      }
-
-      // Build FormData and add fullName field PHP expects
-      var fd = new FormData(feedbackForm);
-      fd.set("fullName", firstName + " " + lastName);
-
-      newBtn.disabled    = true;
-      newBtn.textContent = "Submitting…";
-
-      fetch("../server/process_feedback.php", { method: "POST", body: fd })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.success) {
-            if (fSuccess) {
-              fSuccess.hidden        = false;
-              fSuccess.style.display = "flex";
-              fSuccess.style.position = "fixed";
-              fSuccess.style.inset   = "0";
-              fSuccess.style.zIndex  = "10000";
-            }
-          } else {
-            alert(data.message || "Submission failed. Please try again.");
-          }
-        })
-        .catch(function() { alert("Network error. Please try again."); })
-        .finally(function() {
-          newBtn.disabled    = false;
-          newBtn.textContent = "Submit Feedback";
-        });
-    });
-  });
-  </script>
+    <script src="../scripts/main.js?v=4"></script>
   </body>
   </html>

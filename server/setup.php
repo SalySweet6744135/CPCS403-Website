@@ -1,10 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: server/setup.php
- * Purpose: One-click DB check — open in browser after XAMPP install
- * Example: http://localhost/403/server/setup.php
+ * Purpose: Database setup page — verify tables, upload folder, and demo data in browser
  */
-
 header('Content-Type: text/html; charset=utf-8');
 
 require_once __DIR__ . '/db_config.php';

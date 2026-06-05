@@ -1,21 +1,12 @@
 <?php
 /*
- * File: includes/nav.php
- * Purpose: Shared navigation partial — included in every page header.
- *          Shows Login button when logged out, name + Logout when logged in.
- *
- * Usage:
- *   Pass $activeNav = 'home' | 'services' | 'schedule' | 'search' |
- *                     'upload' | 'video' | 'feedback'
- *   Pass $depth = 0 (root pages) or 1 (pages/ folder)
- *
- * Example from index.html equivalent:
- *   <?php $activeNav = 'home'; $depth = 0; require 'includes/nav.php'; ?>
- *
- * Example from pages/feedback.html equivalent:
- *   <?php $activeNav = 'feedback'; $depth = 1; require '../includes/nav.php'; ?>
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: server/includes/Nav.php
+ * Purpose: Shared navigation partial — reusable header with auth-aware links
  */
-
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $prefix   = str_repeat('../', $depth ?? 0);
@@ -25,12 +16,11 @@ $userName = htmlspecialchars($_SESSION['full_name'] ?? '', ENT_QUOTES, 'UTF-8');
 
 $links = [
     'home'     => ['label' => 'Home',     'href' => $prefix . 'index.html'],
-    'services' => ['label' => 'Services', 'href' => $prefix . 'pages/services.html'],
-    'schedule' => ['label' => 'Schedule', 'href' => $prefix . 'pages/schedule.html'],
-    'search'   => ['label' => 'Search',   'href' => $prefix . 'pages/search.html'],
-    'upload'   => ['label' => 'Upload',   'href' => $prefix . 'pages/upload.html'],
-    'video'    => ['label' => 'Video',    'href' => $prefix . 'pages/video.html'],
-    'feedback' => ['label' => 'Feedback', 'href' => $prefix . 'pages/feedback.html'],
+    'services' => ['label' => 'About Us', 'href' => $prefix . 'pages/services.html'],
+    'schedule' => ['label' => 'Shipping Schedule', 'href' => $prefix . 'pages/schedule.php'],
+    'search'   => ['label' => 'Search Shipments', 'href' => $prefix . 'pages/search.html'],
+    'upload'   => ['label' => 'Upload Documents', 'href' => $prefix . 'pages/upload.html'],
+    'feedback' => ['label' => 'Share Feedback', 'href' => $prefix . 'pages/feedback.html'],
 ];
 ?>
 <header class="site-header">
@@ -59,7 +49,7 @@ $links = [
         <li>
           <a class="nav-link" href="<?= $prefix ?>admin/dashboard.php"
              style="color:var(--accent);font-weight:900">
-            Dashboard
+            Admin Dashboard
           </a>
         </li>
         <?php endif; ?>

@@ -1,0 +1,3 @@
+# Runtime uploads (keep folder via .gitkeep)
+uploads/documents/*
+!uploads/documents/.gitkeep

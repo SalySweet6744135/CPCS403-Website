@@ -1,8 +1,12 @@
 <?php
-/**
- * TrackingMore shipment list + CRUD helpers for admin dashboard.
+/*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
+ * File: server/includes/shipments_service.php
+ * Purpose: Shipments service — TrackingMore list and CRUD helpers for admin dashboard
  */
-
 require_once __DIR__ . '/trackingmore_sdk.php';
 require_once __DIR__ . '/../db_config.php';
 require_once __DIR__ . '/shipment_validation.php';
@@ -165,6 +169,9 @@ function shipments_save_local_meta(
     if (array_key_exists('scheduled_delivery_date', $updateParams)) {
         $fields['estimated_delivery'] = (string) $updateParams['scheduled_delivery_date'];
     }
+    if (array_key_exists('status', $updateParams) && $updateParams['status'] !== '') {
+        $fields['status'] = (string) $updateParams['status'];
+    }
     if ($fields !== []) {
         shipment_meta_upsert($trackingmoreId, $trackingNumber, $courierCode, $fields);
     }
@@ -186,8 +193,12 @@ function shipments_insert_local(array $input): void
     $weight    = trim((string) ($input['weight_kg'] ?? ''));
     $eta       = trim((string) ($input['estimated_delivery'] ?? ''));
     $category  = trim((string) ($input['category'] ?? 'standard'));
-    $status    = 'created';
+    $status    = strtolower(trim((string) ($input['status'] ?? 'created')));
     $now       = date('Y-m-d H:i:s');
+
+    if (!in_array($status, shipment_allowed_statuses(), true)) {
+        $status = 'created';
+    }
 
     // Normalize carrier — local DB only accepts aramex/dhl/fedex/smsa
     $carrierMap = ['smsa-express' => 'smsa', 'ups' => 'aramex', 'usps' => 'aramex'];
@@ -208,6 +219,7 @@ function shipments_insert_local(array $input): void
             carrier           = VALUES(carrier),
             origin_city       = VALUES(origin_city),
             destination_city  = VALUES(destination_city),
+            status            = VALUES(status),
             category          = VALUES(category),
             weight_kg         = VALUES(weight_kg),
             estimated_delivery= VALUES(estimated_delivery),
@@ -237,20 +249,27 @@ function shipments_add(array $post): array
         $res          = $sdk->createTracking($validated['params']);
         $code         = (int) ($res['meta']['code'] ?? 0);
         $updateParams = $validated['update_params'] ?? [];
+        $status       = $validated['status'] ?? 'created';
+        $localInput   = array_merge($post, $validated['params'], ['status' => $status]);
+        $metaParams   = array_merge($updateParams, ['status' => $status]);
 
         if ($code === 200) {
-            shipments_insert_local(array_merge($post, $validated['params']));
+            shipments_insert_local($localInput);
             $message = 'Shipment added and registered with TrackingMore.';
-            if ($updateParams !== []) {
-                $id = shipments_resolve_tracking_id($sdk, $validated['params'], $res);
-                if ($id) {
+            $id = shipments_resolve_tracking_id($sdk, $validated['params'], $res);
+            if ($id) {
+                if ($updateParams !== []) {
                     $meta = shipments_apply_create_metadata($sdk, $id, $updateParams);
-                    shipments_save_local_meta(
-                        $id,
-                        $validated['params']['tracking_number'],
-                        $validated['params']['courier_code'],
-                        $updateParams
-                    );
+                } else {
+                    $meta = ['ok' => true, 'message' => ''];
+                }
+                shipments_save_local_meta(
+                    $id,
+                    $validated['params']['tracking_number'],
+                    $validated['params']['courier_code'],
+                    $metaParams
+                );
+                if ($updateParams !== []) {
                     if (!$meta['ok']) {
                         return ['ok' => true, 'message' => $message . ' ' . $meta['message'], 'api_code' => $code];
                     }
@@ -261,21 +280,25 @@ function shipments_add(array $post): array
         }
 
         if ($code === 4101) {
-            shipments_insert_local(array_merge($post, $validated['params']));
+            shipments_insert_local($localInput);
             $message = 'Tracking number already exists in your TrackingMore account.';
-            if ($updateParams !== []) {
-                $id = shipments_resolve_tracking_id($sdk, $validated['params'], $res);
-                if ($id) {
+            $id = shipments_resolve_tracking_id($sdk, $validated['params'], $res);
+            if ($id) {
+                if ($updateParams !== []) {
                     $meta = shipments_apply_create_metadata($sdk, $id, $updateParams);
-                    shipments_save_local_meta(
-                        $id,
-                        $validated['params']['tracking_number'],
-                        $validated['params']['courier_code'],
-                        $updateParams
-                    );
-                    if (!$meta['ok']) {
-                        return ['ok' => true, 'message' => $message . ' ' . $meta['message'], 'api_code' => $code];
-                    }
+                } else {
+                    $meta = ['ok' => true, 'message' => ''];
+                }
+                shipments_save_local_meta(
+                    $id,
+                    $validated['params']['tracking_number'],
+                    $validated['params']['courier_code'],
+                    $metaParams
+                );
+                if ($updateParams !== [] && !$meta['ok']) {
+                    return ['ok' => true, 'message' => $message . ' ' . $meta['message'], 'api_code' => $code];
+                }
+                if ($updateParams !== []) {
                     $message .= ' Weight and delivery date updated.';
                 }
             }

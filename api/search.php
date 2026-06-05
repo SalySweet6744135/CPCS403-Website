@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: api/search.php
- * Purpose: Search and filter shipments via GET parameters, return JSON results
+ * Purpose: Search API — filter and query shipments, return JSON results
  */
-
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -81,7 +84,7 @@ $category   = trim($_GET['category'] ?? '');
 $dateFrom   = trim($_GET['date_from'] ?? '');
 $dateTo     = trim($_GET['date_to'] ?? '');
 
-$allowedCarriers   = ['aramex', 'dhl', 'fedex', 'smsa-express'];
+$allowedCarriers   = ['aramex', 'dhl', 'fedex', 'smsa', 'smsa-express'];
 $allowedStatuses   = ['created', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered'];
 $allowedCategories = ['standard', 'express', 'freight'];
 

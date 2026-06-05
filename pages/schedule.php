@@ -1,13 +1,12 @@
 <?php
 /*
- * Name: Wareef Alzubaidi
- * ID: 2207221
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
  * Section: CPCS403
- * Date: 2026-03-11
+ * Date: 31-05-2026
  * File: pages/schedule.php
- * Purpose: ShipSmart Schedule Page — live data from TrackingMore API via PHP SDK
+ * Purpose: Shipping Schedule page — live carrier schedule data from TrackingMore API
  */
-
 // ── Load SDK (manual install) ─────────────────────────────────────────────────
 $sdkBase = __DIR__ . '/../trackingmore/trackingmore-sdk-php/src/';
 require_once $sdkBase . 'TrackingMoreException.php';
@@ -342,16 +341,15 @@ function statusClass(string $s): string {
       <nav class="nav" aria-label="Main navigation">
         <ul class="nav-list">
           <li><a class="nav-link" href="../index.html">Home</a></li>
-          <li><a class="nav-link" href="services.html">About</a></li>
-          <li><a class="nav-link is-active" href="schedule.php">Schedule</a></li>
-          <li><a class="nav-link" href="search.html">Search</a></li>
-          <li><a class="nav-link" href="upload.html">Upload</a></li>
-          <li><a class="nav-link" href="video.html">Video</a></li>
-          <li><a class="nav-link" href="feedback.html">Feedback</a></li>
-          <li><a class="nav-link" href="../profile.php">Profile</a></li>
+          <li><a class="nav-link" href="services.html">About Us</a></li>
+          <li><a class="nav-link is-active" href="schedule.php">Shipping Schedule</a></li>
+          <li><a class="nav-link" href="search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="upload.html">Upload Documents</a></li>
+          <li><a class="nav-link" href="feedback.html">Share Feedback</a></li>
+          <li><a class="nav-link" href="../profile.php">My Profile</a></li>
           <li id="nav-dashboard" style="display:none">
             <a class="nav-link" href="../admin/dashboard.php"
-               style="color:var(--accent);font-weight:900">Dashboard</a>
+               style="color:var(--accent);font-weight:900">Admin Dashboard</a>
           </li>
         </ul>
       </nav>
@@ -556,12 +554,11 @@ function statusClass(string $s): string {
           <p class="footer-title">Pages</p>
           <ul class="footer-links">
             <li><a href="../index.html">Home</a></li>
-            <li><a href="services.html">About</a></li>
-            <li><a href="schedule.php">Schedule</a></li>
-            <li><a href="search.html">Search</a></li>
-            <li><a href="upload.html">Upload</a></li>
-            <li><a href="video.html">Video</a></li>
-            <li><a href="feedback.html">Feedback</a></li>
+            <li><a href="services.html">About Us</a></li>
+            <li><a href="schedule.php">Shipping Schedule</a></li>
+            <li><a href="search.html">Search Shipments</a></li>
+            <li><a href="upload.html">Upload Documents</a></li>
+            <li><a href="feedback.html">Share Feedback</a></li>
           </ul>
         </div>
       </div>

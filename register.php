@@ -1,7 +1,11 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: register.php
- * Purpose: Registration page — split layout matching login.php design.
+ * Purpose: Registration page — account creation with password policy and api/register.php
  */
 ?>
 <!DOCTYPE html>
@@ -158,6 +162,18 @@
       font-size:0.75rem; color:var(--muted);
       margin-top:4px; min-height:14px;
     }
+    .pw-requirements{
+      list-style:none; margin:8px 0 0; padding:0;
+      font-size:0.76rem; line-height:1.5; color:var(--muted);
+    }
+    .pw-requirements li{
+      padding-left:1.1rem; position:relative;
+    }
+    .pw-requirements li::before{
+      content:"○"; position:absolute; left:0; color:#c0c0c0;
+    }
+    .pw-requirements li.met{ color:#0b6b2c; font-weight:600; }
+    .pw-requirements li.met::before{ content:"✓"; color:#0b6b2c; }
 
     .auth-general-err{
       background:#fff0f0; border:1px solid rgba(176,0,32,0.2);
@@ -287,8 +303,17 @@
         <div class="auth-field">
           <label for="regPassword">Password</label>
           <input type="password" id="regPassword" name="password"
-                 placeholder="Min 8 chars, 1 uppercase, 1 number"
-                 autocomplete="new-password" required>
+                 placeholder="Min 5 chars — upper, lower, number, symbol"
+                 autocomplete="new-password" minlength="5" maxlength="128" required
+                 aria-describedby="pwRequirements pwHint">
+          <ul class="pw-requirements" id="pwRequirements" aria-live="polite">
+            <li data-rule="length">At least 5 characters</li>
+            <li data-rule="upper">One uppercase letter (A–Z)</li>
+            <li data-rule="lower">One lowercase letter (a–z)</li>
+            <li data-rule="digit">One number (0–9)</li>
+            <li data-rule="special">One special character (!@#$%…)</li>
+            <li data-rule="space">No spaces</li>
+          </ul>
           <div class="pw-strength">
             <div class="pw-strength-bar" id="pwBar"></div>
           </div>
@@ -348,6 +373,35 @@
 
   const pwBar  = document.getElementById("pwBar");
   const pwHint = document.getElementById("pwHint");
+  const pwReqList = document.getElementById("pwRequirements");
+
+  const PASSWORD_MIN = 5;
+  const PASSWORD_MAX = 128;
+  const BLOCKED_PASSWORDS = ["password", "password123", "123456789", "qwerty123", "admin123", "letmein"];
+
+  const passwordRuleChecks = (pw) => ({
+    length:  pw.length >= PASSWORD_MIN && pw.length <= PASSWORD_MAX,
+    upper:   /[A-Z]/.test(pw),
+    lower:   /[a-z]/.test(pw),
+    digit:   /[0-9]/.test(pw),
+    special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/\\~`"']/.test(pw),
+    space:   !/\s/.test(pw),
+  });
+
+  const passwordValidationMessage = (pw) => {
+    const r = passwordRuleChecks(pw);
+    if (!r.length) return `Password must be ${PASSWORD_MIN}–${PASSWORD_MAX} characters.`;
+    if (!r.space) return "Password must not contain spaces.";
+    if (!r.upper) return "Include at least one uppercase letter (A–Z).";
+    if (!r.lower) return "Include at least one lowercase letter (a–z).";
+    if (!r.digit) return "Include at least one number (0–9).";
+    if (!r.special) return "Include at least one special character (e.g. ! @ # $ %).";
+    const lower = pw.toLowerCase();
+    if (BLOCKED_PASSWORDS.some((bad) => lower === bad || lower.includes(bad))) {
+      return "This password is too common. Choose a more unique password.";
+    }
+    return "";
+  };
 
   const setErr = (key, msg) => {
     fields[key].err.textContent = msg;
@@ -359,28 +413,34 @@
     generalErr.classList.remove("visible");
   };
 
-  // Password strength meter
+  // Password strength meter + live requirement checklist
   fields.password.input.addEventListener("input", () => {
     const pw = fields.password.input.value;
-    let score = 0;
-    if (pw.length >= 8)          score++;
-    if (/[A-Z]/.test(pw))        score++;
-    if (/[0-9]/.test(pw))        score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const rules = passwordRuleChecks(pw);
 
-    const colors = ["#e74c3c","#e67e22","#f1c40f","#2ecc71"];
-    const hints  = ["Too short","Add uppercase & numbers","Almost there","Strong password ✓"];
-    const widths = ["25%","50%","75%","100%"];
+    if (pwReqList) {
+      pwReqList.querySelectorAll("li[data-rule]").forEach((li) => {
+        const key = li.getAttribute("data-rule");
+        li.classList.toggle("met", !!rules[key]);
+      });
+    }
+
+    const metCount = Object.values(rules).filter(Boolean).length;
+    const total = Object.keys(rules).length;
+    const pct = pw.length === 0 ? 0 : Math.round((metCount / total) * 100);
+
+    const colors = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71"];
+    const hints  = ["Weak", "Fair", "Good", "Strong password ✓"];
+    const colorIdx = metCount <= 2 ? 0 : metCount <= 4 ? 1 : metCount < total ? 2 : 3;
 
     if (pw.length === 0) {
       pwBar.style.width = "0%";
       pwHint.textContent = "";
     } else {
-      const i = Math.min(score - 1, 3);
-      pwBar.style.width      = widths[i] || "25%";
-      pwBar.style.background = colors[i] || colors[0];
-      pwHint.textContent     = hints[i]  || hints[0];
-      pwHint.style.color     = colors[i] || colors[0];
+      pwBar.style.width = pct + "%";
+      pwBar.style.background = colors[colorIdx];
+      pwHint.textContent = hints[colorIdx];
+      pwHint.style.color = colors[colorIdx];
     }
   });
 
@@ -398,8 +458,9 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
       setErr("email", "Please enter a valid email address."); ok = false;
     }
-    if (pw.length < 8 || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw)) {
-      setErr("password", "Min 8 chars, 1 uppercase letter, 1 number."); ok = false;
+    const pwMsg = passwordValidationMessage(pw);
+    if (pwMsg) {
+      setErr("password", pwMsg); ok = false;
     }
     if (pw !== cf) {
       setErr("confirm", "Passwords do not match."); ok = false;
@@ -414,7 +475,7 @@
     btn.disabled    = true;
     btn.textContent = "Creating account…";
 
-    fetch("api/register.php", { method: "POST", body: new FormData(form) })
+    fetch("api/register.php", { method: "POST", credentials: "include", body: new FormData(form) })
       .then(r => r.json())
       .then(data => {
         if (data.success) {

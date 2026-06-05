@@ -1,10 +1,10 @@
 <!--
-Name: Sama Salem Saloum
-ID: 2205679
+Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ID: 2206712, 2207221, 2205679
 Section: CPCS403
 Date: 31-05-2026
 File: pages/upload.html
-Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, proof of delivery)
+Purpose: Upload Documents page — attach shipment documents (invoice, receipt, proof of delivery) via AJAX
 -->
 
 <!DOCTYPE html>
@@ -12,7 +12,7 @@ Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ShipSmart | Upload Document</title>
+  <title>ShipSmart | Upload Documents</title>
   <link rel="icon" type="image/svg+xml" href="../images/shipsmart-logo-3.svg" />
 
   <!-- External CSS -->
@@ -31,14 +31,13 @@ Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, 
       <nav class="nav" aria-label="Main navigation">
         <ul class="nav-list">
           <li><a class="nav-link" href="../index.html">Home</a></li>
-          <li><a class="nav-link" href="services.html">About</a></li>
-          <li><a class="nav-link" href=" schedule.php">Schedule</a></li>
-          <li><a class="nav-link" href="search.html">Search</a></li>
-          <li><a class="nav-link is-active" href="upload.html">Upload</a></li>
-          <li><a class="nav-link" href="video.html">Video</a></li>
-          <li><a class="nav-link" href="feedback.html">Feedback</a></li>
-          <li><a class="nav-link" href="../Profile.php">Profile</a></li>
-          <li id="nav-dashboard" style="display:none"><a class="nav-link" href="../admin/dashboard.php" style="color:var(--accent);font-weight:900">Dashboard</a></li>
+          <li><a class="nav-link" href="services.html">About Us</a></li>
+          <li><a class="nav-link" href="schedule.php">Shipping Schedule</a></li>
+          <li><a class="nav-link" href="search.html">Search Shipments</a></li>
+          <li><a class="nav-link is-active" href="upload.html">Upload Documents</a></li>
+          <li><a class="nav-link" href="feedback.html">Share Feedback</a></li>
+          <li><a class="nav-link" href="../profile.php">My Profile</a></li>
+          <li id="nav-dashboard" style="display:none"><a class="nav-link" href="../admin/dashboard.php" style="color:var(--accent);font-weight:900">Admin Dashboard</a></li>
         </ul>
       </nav>
 
@@ -54,7 +53,7 @@ Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, 
     <!-- Page heading -->
     <section class="section page-hero">
       <div class="container">
-        <h1>Upload Shipment Document</h1>
+        <h1>Upload Documents</h1>
         <p class="muted">
           Attach an invoice, receipt, or proof of delivery to your shipment record.
           Accepted formats: JPG, PNG, PDF — maximum file size 2 MB.
@@ -71,7 +70,7 @@ Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, 
           <form
             id="uploadForm"
             class="card upload-card"
-            action="/403/api/upload-document.php"
+            action="../api/upload-document.php"
             method="POST"
             enctype="multipart/form-data"
             novalidate
@@ -141,19 +140,6 @@ Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, 
               <p class="error" id="fileError" aria-live="polite"></p>
             </div>
 
-            <!-- Optional email for upload confirmation -->
-            <div class="field">
-              <label for="uploaderEmail">Your Email <span class="hint-label">(optional — receive upload confirmation)</span></label>
-              <input
-                id="uploaderEmail"
-                name="uploader_email"
-                type="email"
-                placeholder="e.g., sara@example.com"
-                autocomplete="email"
-              />
-              <p class="error" id="emailError" aria-live="polite"></p>
-            </div>
-
             <!-- Submit -->
             <button class="btn btn-primary" type="submit" id="uploadBtn">
               Upload Document
@@ -220,12 +206,11 @@ Purpose: ShipSmart Upload Page — attach shipment documents (invoice, receipt, 
         <p class="footer-title">Pages</p>
          <ul class="footer-links">
           <li><a href="../index.html">Home</a></li>
-          <li><a href="services.html">About</a></li>
-          <li><a href=" schedule.php">Schedule</a></li>
-          <li><a href="search.html">Search</a></li>
-          <li><a href="upload.html">Upload</a></li>
-          <li><a href="video.html">Video</a></li>
-          <li><a href="feedback.html">Feedback</a></li>
+          <li><a href="services.html">About Us</a></li>
+          <li><a href="schedule.php">Shipping Schedule</a></li>
+          <li><a href="search.html">Search Shipments</a></li>
+          <li><a href="upload.html">Upload Documents</a></li>
+          <li><a href="feedback.html">Share Feedback</a></li>
         </ul>
       </div>
     </div>

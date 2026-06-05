@@ -1,9 +1,12 @@
 <?php
 /*
+ * Name: Manar Alharbi, Wareef Alzubaidi, Sama Salloum
+ * ID: 2206712, 2207221, 2205679
+ * Section: CPCS403
+ * Date: 31-05-2026
  * File: api/login.php
- * Purpose: Verify credentials, start session, redirect by role.
+ * Purpose: Login API — verify credentials, start session, log attempts, return JSON
  */
-
 header('Content-Type: application/json');
 
 // Start session so session_regenerate_id() and $_SESSION work without warnings
@@ -29,6 +32,12 @@ if (file_exists($dbPath)) {
 if (file_exists($authPath)) {
     require_once $authPath;
 }
+$dbLogPath = __DIR__ . '/../server/includes/db_log.php';
+if (file_exists($dbLogPath)) {
+    require_once $dbLogPath;
+}
+
+$clientIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
 $email    = trim($_POST['email']    ?? '');
 $password =       $_POST['password'] ?? '';
@@ -66,6 +75,9 @@ $testAccounts = [
 if (isset($testAccounts[strtolower($email)])) {
     $t = $testAccounts[strtolower($email)];
     if (!password_verify($password, $t['hash'])) {
+        if (isset($conn) && $conn && function_exists('logLoginAttempt')) {
+            logLoginAttempt($conn, strtolower($email), false, $clientIp);
+        }
         http_response_code(401);
         echo json_encode(['success' => false, 'errors' => [
             'general' => 'Incorrect email or password.'
@@ -76,6 +88,9 @@ if (isset($testAccounts[strtolower($email)])) {
     $_SESSION['user_id']   = $t['id'];
     $_SESSION['full_name'] = $t['full_name'];
     $_SESSION['role']      = $t['role'];
+    if (isset($conn) && $conn && function_exists('logLoginAttempt')) {
+        logLoginAttempt($conn, strtolower($email), true, $clientIp);
+    }
     $redirect = $t['role'] === 'admin' ? 'admin/dashboard.php' : 'index.html';
     echo json_encode(['success' => true, 'role' => $t['role'], 'redirect' => $redirect]);
     exit;
@@ -93,20 +108,31 @@ if (!$conn) {
 
 // Fetch user from DB
 $stmt = $conn->prepare(
-    'SELECT id, full_name, password_hash, role FROM users WHERE email = ?'
+    'SELECT id, full_name, password_hash, role, is_active FROM users WHERE email = ?'
 );
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $result = $stmt->get_result();
 $user   = $result->fetch_assoc();
 $stmt->close();
-$conn->close();
 
 // Verify password — generic error prevents user enumeration
 if (!$user || !password_verify($password, $user['password_hash'])) {
+    logLoginAttempt($conn, strtolower($email), false, $clientIp);
+    $conn->close();
     http_response_code(401);
     echo json_encode(['success' => false, 'errors' => [
         'general' => 'Incorrect email or password.'
+    ]]);
+    exit;
+}
+
+if (isset($user['is_active']) && (int) $user['is_active'] !== 1) {
+    logLoginAttempt($conn, strtolower($email), false, $clientIp);
+    $conn->close();
+    http_response_code(403);
+    echo json_encode(['success' => false, 'errors' => [
+        'general' => 'This account has been deactivated. Contact support.',
     ]]);
     exit;
 }
@@ -117,6 +143,9 @@ session_regenerate_id(true);
 $_SESSION['user_id']   = $user['id'];
 $_SESSION['full_name'] = $user['full_name'];
 $_SESSION['role']      = $user['role'];
+
+logLoginAttempt($conn, strtolower($email), true, $clientIp);
+$conn->close();
 
 // Redirect based on role
 $redirect = $user['role'] === 'admin'
