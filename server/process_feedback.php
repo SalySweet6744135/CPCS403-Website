@@ -4,6 +4,10 @@
  * Purpose: Receive feedback form data via POST, validate, and store in MySQL
  */
 
+// Suppress PHP warnings from appearing in JSON output
+ini_set('display_errors', 0);
+error_reporting(0);
+
 // ── Allow JSON responses ──
 header('Content-Type: application/json');
 

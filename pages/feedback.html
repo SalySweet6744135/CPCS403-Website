@@ -303,7 +303,7 @@ Purpose: ShipSmart Feedback Page — user feedback form with client-side validat
       newBtn.disabled    = true;
       newBtn.textContent = "Submitting…";
 
-      fetch("/403/server/process_feedback.php", { method: "POST", body: fd })
+      fetch("../server/process_feedback.php", { method: "POST", body: fd })
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.success) {

@@ -1380,6 +1380,9 @@ body.menu-open .nav-list{
   margin-left:2px;
 }
 
+/* Ensure hidden attribute always works even when CSS sets display */
+[hidden] { display: none !important; }
+
 /* Success card */
 .upload-success{
   padding:2.5rem 2rem;

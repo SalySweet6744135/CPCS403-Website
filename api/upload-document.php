@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once __DIR__ . '/../server/db_config.php';
 require_once __DIR__ . '/../server/includes/mailer.php';
 require_once __DIR__ . '/../server/includes/db_log.php';
+require_once __DIR__ . '/../server/includes/db_install.php';
 
 define('UPLOAD_DIR', __DIR__ . '/../uploads/documents/');
 
