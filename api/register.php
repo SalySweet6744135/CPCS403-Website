@@ -98,27 +98,42 @@ if (!$stmt->execute()) {
 $userId = $conn->insert_id;
 $stmt->close();
 
-// ── Welcome email ──
-$safeName  = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
-$safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+// ── Send welcome confirmation email (same flow as upload / feedback) ──
+$emailSent  = false;
+$emailError = null;
+
+$safeName       = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
+$safeEmail      = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+$registeredAt   = date('d M Y, H:i');
 
 $emailBody = <<<HTML
 <p style="margin:0 0 16px;color:#444;line-height:1.6;">
   Hi <strong>{$safeName}</strong>,<br />
   Welcome to <strong>ShipSmart</strong> — your universal shipment tracker for Aramex, DHL, FedEx, and SMSA.
+  Your account has been created successfully. Here are your details:
 </p>
 
 <table width="100%" cellpadding="0" cellspacing="0"
        style="border-collapse:collapse;font-size:14px;margin-bottom:20px;">
   <tr style="background:#f8f4fb;">
     <td style="padding:10px 14px;border:1px solid #ece6f0;
-               font-weight:600;color:#7b2b6a;width:40%;">Account Email</td>
-    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$safeEmail}</td>
+               font-weight:600;color:#7b2b6a;width:40%;">Full Name</td>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$safeName}</td>
   </tr>
   <tr>
     <td style="padding:10px 14px;border:1px solid #ece6f0;
+               font-weight:600;color:#7b2b6a;">Account Email</td>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$safeEmail}</td>
+  </tr>
+  <tr style="background:#f8f4fb;">
+    <td style="padding:10px 14px;border:1px solid #ece6f0;
                font-weight:600;color:#7b2b6a;">Role</td>
     <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">User</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;
+               font-weight:600;color:#7b2b6a;">Registered At</td>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$registeredAt}</td>
   </tr>
 </table>
 
@@ -128,9 +143,13 @@ $emailBody = <<<HTML
 <p style="margin:0;color:#444;">— The ShipSmart Team</p>
 HTML;
 
-$subject   = "Welcome to ShipSmart, {$fullName}!";
+$subject   = "Welcome — ShipSmart Account Created";
 $emailHtml = buildEmailTemplate('Welcome to ShipSmart!', $emailBody);
 $emailSent = sendMail($email, $fullName, $subject, $emailHtml);
+
+if (!$emailSent) {
+    $emailError = 'Account created, but welcome email could not be sent.';
+}
 
 logEmail(
     $conn,
@@ -146,8 +165,11 @@ logEmail(
 $conn->close();
 
 echo json_encode([
-    'success'    => true,
-    'message'    => 'Account created! You can now log in.',
-    'emailSent'  => $emailSent,
-    'emailError' => $emailSent ? null : 'Account created, but welcome email could not be sent.',
+    'success'        => true,
+    'message'        => 'Account created! You can now log in.',
+    'full_name'      => $fullName,
+    'email'          => $email,
+    'registered_at'  => $registeredAt,
+    'emailSent'      => $emailSent,
+    'emailError'     => $emailError,
 ]);

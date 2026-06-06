@@ -220,11 +220,29 @@
     }
     .auth-success h3{ color:var(--primary); margin:0 0 8px; font-size:1.3rem; }
     .auth-success p{ color:var(--muted); font-size:0.9rem; }
-    .auth-email-note{
-      margin-top:10px;
-      font-size:0.85rem;
+    .auth-email-hint{
+      margin:6px 0 0;
+      font-size:0.82rem;
+      color:var(--muted);
       line-height:1.45;
-      max-width:32ch;
+    }
+    .register-success-meta{
+      background:var(--soft);
+      border-radius:12px;
+      padding:14px 18px;
+      text-align:left;
+      width:100%;
+      font-size:0.88rem;
+      margin:16px 0 0;
+      line-height:1.55;
+    }
+    .register-success-meta p{ margin:0 0 8px; color:var(--text); }
+    .register-success-meta p:last-child{ margin-bottom:0; }
+    .register-signin-btn{
+      display:inline-block;
+      margin-top:18px;
+      text-decoration:none;
+      text-align:center;
     }
 
     @media(max-width:860px){
@@ -303,6 +321,7 @@
           <input type="email" id="regEmail" name="email"
                  placeholder="e.g., sara@example.com"
                  autocomplete="email" required>
+          <p class="auth-email-hint">We’ll email you a welcome message with your account details.</p>
           <p class="err" id="emailError"></p>
         </div>
 
@@ -336,7 +355,7 @@
         </div>
 
         <button class="auth-submit" type="submit" id="registerBtn">
-          Create Account
+          Create Account &amp; Send Welcome Email
         </button>
 
         <p class="auth-terms">
@@ -344,12 +363,13 @@
         </p>
       </form>
 
-      <!-- Success state -->
+      <!-- Success state (same pattern as upload confirmation) -->
       <div id="registerSuccess" hidden class="auth-success">
         <div class="auth-success-icon">✓</div>
         <h3>Account Created!</h3>
-        <p>Redirecting you to sign in…</p>
-        <p id="registerEmailNote" class="auth-email-note" hidden aria-live="polite"></p>
+        <p id="registerSuccessMsg" class="muted">Your ShipSmart account is ready.</p>
+        <div class="register-success-meta" id="registerSuccessMeta" aria-live="polite"></div>
+        <a href="login.php" class="auth-submit register-signin-btn">Sign In</a>
       </div>
 
       <div class="auth-switch">
@@ -368,9 +388,12 @@
 
   const form       = document.getElementById("registerForm");
   const btn        = document.getElementById("registerBtn");
-  const successBox = document.getElementById("registerSuccess");
-  const emailNote  = document.getElementById("registerEmailNote");
-  const generalErr = document.getElementById("generalError");
+  const successBox   = document.getElementById("registerSuccess");
+  const successMsg   = document.getElementById("registerSuccessMsg");
+  const successMeta  = document.getElementById("registerSuccessMeta");
+  const authSwitch   = document.querySelector(".auth-switch");
+  const generalErr   = document.getElementById("generalError");
+  const SUBMIT_LABEL = "Create Account & Send Welcome Email";
 
   const fields = {
     full_name: { input: document.getElementById("regName"),     err: document.getElementById("nameError") },
@@ -488,19 +511,32 @@
       .then(data => {
         if (data.success) {
           form.hidden       = true;
+          if (authSwitch) authSwitch.hidden = true;
           successBox.hidden = false;
-          if (emailNote) {
-            if (data.emailSent) {
-              emailNote.textContent = "✓ Welcome email sent to your inbox.";
-              emailNote.style.color = "#2e7d32";
-              emailNote.hidden = false;
-            } else if (data.emailError) {
-              emailNote.textContent = "⚠ " + data.emailError;
-              emailNote.style.color = "#b26a00";
-              emailNote.hidden = false;
-            }
+
+          if (successMsg) {
+            successMsg.textContent =
+              data.full_name
+                ? `Welcome, ${data.full_name}! Your account has been created.`
+                : "Your ShipSmart account has been created.";
           }
-          setTimeout(() => window.location.href = "login.php", 2200);
+
+          let metaHtml =
+            `<p><strong>Email:</strong> ${data.email || fields.email.input.value.trim()}</p>`;
+          if (data.registered_at) {
+            metaHtml += `<p><strong>Registered:</strong> ${data.registered_at}</p>`;
+          }
+
+          if (data.emailSent) {
+            metaHtml += `<p style="color:#2e7d32;">&#10003; Welcome email sent to your inbox.</p>`;
+          } else if (data.emailError) {
+            metaHtml += `<p style="color:#b26a00;">&#9888; ${data.emailError}</p>`;
+          } else {
+            metaHtml += `<p style="color:#b26a00;">&#9888; Account created, but welcome email could not be sent.</p>`;
+          }
+
+          if (successMeta) successMeta.innerHTML = metaHtml;
+          window.scrollTo({ top: 0, behavior: "smooth" });
         } else {
           if (data.errors) {
             Object.entries(data.errors).forEach(([k, v]) => {
@@ -520,7 +556,12 @@
         generalErr.textContent = "Network error. Please try again.";
         generalErr.classList.add("visible");
       })
-      .finally(() => { btn.disabled = false; btn.textContent = "Create Account"; });
+      .finally(() => {
+        if (!successBox || successBox.hidden) {
+          btn.disabled = false;
+          btn.textContent = SUBMIT_LABEL;
+        }
+      });
   });
 
   // Reset border on type
