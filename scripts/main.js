@@ -19,18 +19,31 @@ Purpose: Global JavaScript — navigation toggle, feedback form AJAX, session-aw
 
   const apiUrl = (endpoint) => `${apiRoot}/${endpoint.replace(/^\//, "")}`;
 
-  // Show Dashboard nav item for admins when page is static HTML
-  (function revealAdminNav(){
-    try{
-      fetch(apiUrl("api/whoami.php"), { credentials: 'include' })
-        .then(r => r.json())
-        .then(j => {
-          if (j && j.role === 'admin') {
-            const el = document.getElementById('nav-dashboard');
-            if (el) el.style.display = '';
+  // Session-aware UI: hide Sign In / Create Account when logged in; show admin nav for admins
+  (function applySessionNav() {
+    try {
+      fetch(apiUrl("api/whoami.php"), { credentials: "include" })
+        .then((r) => r.json())
+        .then((session) => {
+          if (!session) return;
+
+          const loggedIn = !!session.loggedIn;
+
+          if (session.role === "admin") {
+            const adminNav = document.getElementById("nav-dashboard");
+            if (adminNav) adminNav.style.display = "";
           }
-        }).catch(()=>{});
-    }catch(e){}
+
+          document.querySelectorAll(".auth-guest-only").forEach((el) => {
+            el.hidden = loggedIn;
+          });
+
+          document.querySelectorAll(".auth-user-only").forEach((el) => {
+            el.hidden = !loggedIn;
+          });
+        })
+        .catch(() => {});
+    } catch (e) { /* ignore */ }
   })();
 
   // ===== Common elements (may be missing on some pages) =====

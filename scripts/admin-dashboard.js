@@ -15,6 +15,15 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
   const ALLOWED_STATUSES = ["created", "picked_up", "in_transit", "out_for_delivery", "delivered"];
   const TRACKING_RE = /^[A-Za-z0-9\-]{5,50}$/;
 
+  const STATUS_LABELS = {
+    created: "Created",
+    picked_up: "Picked Up",
+    in_transit: "In Transit",
+    out_for_delivery: "Out for Delivery",
+    delivered: "Delivered",
+    exception: "Exception",
+  };
+
   const STATUS_COLORS = {
     pending: ["#ececec", "#444"],
     created: ["#ececec", "#444"],
@@ -28,6 +37,30 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
     delivered: ["#e9fff0", "#0b6b2c"],
     exception: ["#fff0f0", "#b00020"],
     expired: ["#f5f5f5", "#888"],
+  };
+
+  /** Map TrackingMore / legacy values to local shipment status keys. */
+  const normalizeStatus = (raw) => {
+    const s = String(raw || "created")
+      .toLowerCase()
+      .replace(/[\s-]/g, "_");
+    const map = {
+      pending: "created",
+      inforeceived: "created",
+      info_received: "created",
+      created: "created",
+      pickup: "picked_up",
+      picked_up: "picked_up",
+      transit: "in_transit",
+      in_transit: "in_transit",
+      outfordelivery: "out_for_delivery",
+      out_for_delivery: "out_for_delivery",
+      delivered: "delivered",
+      exception: "exception",
+      undelivered: "exception",
+      expired: "exception",
+    };
+    return map[s] || (ALLOWED_STATUSES.includes(s) ? s : "created");
   };
 
   const el = {
@@ -56,11 +89,9 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
   };
 
   const statusBadge = (status) => {
-    const key = String(status || "pending")
-      .toLowerCase()
-      .replace(/[\s-]/g, "_");
-    const [bg, fg] = STATUS_COLORS[key] || ["#ececec", "#444"];
-    const label = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const key = normalizeStatus(status);
+    const [bg, fg] = STATUS_COLORS[key] || STATUS_COLORS.created;
+    const label = STATUS_LABELS[key] || key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     return `<span style="background:${bg};color:${fg};padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:800">${esc(label)}</span>`;
   };
 
@@ -89,7 +120,7 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
     const byDay = [0, 0, 0, 0, 0, 0, 0];
 
     list.forEach((s) => {
-      const st = s.status || "pending";
+      const st = normalizeStatus(s.status);
       byStatus[st] = (byStatus[st] || 0) + 1;
       const ca = (s.carrier || "unknown").toUpperCase();
       byCarrier[ca] = (byCarrier[ca] || 0) + 1;
@@ -101,8 +132,11 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
 
     const total = list.length;
     const delivered = byStatus.delivered || 0;
-    const inTransit = byStatus.transit || byStatus.in_transit || 0;
-    const exceptions = byStatus.exception || byStatus.undelivered || 0;
+    const inTransit =
+      (byStatus.in_transit || 0) +
+      (byStatus.picked_up || 0) +
+      (byStatus.out_for_delivery || 0);
+    const exceptions = byStatus.exception || 0;
     const deliveryRate = total > 0 ? Math.round((delivered / total) * 100) : 0;
 
     return { byStatus, byCarrier, byDay, total, delivered, inTransit, exceptions, deliveryRate };
@@ -136,7 +170,9 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
     const statusPalette = ["#ececec", "#eef3ff", "#fff4e6", "#f3e8ff", "#e9fff0", "#fff0f0", "#f5f5f5", "#e0f0ff"];
     const statusBorderPalette = ["#aaa", "#1d4ed8", "#c2410c", "#7e22ce", "#0b6b2c", "#b00020", "#888", "#1a88dd"];
 
-    const statusKeys = Object.keys(stats.byStatus);
+    const statusKeys = Object.keys(stats.byStatus).map(
+      (k) => STATUS_LABELS[k] || k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    );
     const statusData = Object.values(stats.byStatus);
     const carrierKeys = Object.keys(stats.byCarrier);
     const carrierData = Object.values(stats.byCarrier);
@@ -151,9 +187,7 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
         new Chart(ctxStatus, {
           type: "doughnut",
           data: {
-            labels: statusKeys.map((l) =>
-              l.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-            ),
+            labels: statusKeys,
             datasets: [
               {
                 data: statusData,
@@ -265,6 +299,7 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
                 data-id="${esc(s.id)}"
                 data-tracking="${esc(s.tracking_number)}"
                 data-carrier="${esc(s.carrier)}"
+                data-status="${esc(normalizeStatus(s.status))}"
                 data-origin="${esc(s.origin_city)}"
                 data-dest="${esc(s.destination_city)}">Edit</button>
               <button class="btn-sm btn-del" type="button" data-delete-id="${esc(s.id)}">Delete</button>
@@ -378,8 +413,15 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
     document.getElementById("editId").value = d.id;
     const editTracking = document.getElementById("editTracking");
     const editCarrier = document.getElementById("editCarrier");
+    const editStatus = document.getElementById("editStatus");
     if (editTracking) editTracking.value = d.tracking || "";
     if (editCarrier) editCarrier.value = d.carrier || "";
+    if (editStatus) {
+      const st = normalizeStatus(d.status);
+      editStatus.value = ALLOWED_STATUSES.includes(st) ? st : "created";
+    }
+    const editStatusError = document.getElementById("editStatusError");
+    if (editStatusError) editStatusError.textContent = "";
     document.getElementById("eTrackingDisplay").textContent =
       `${(d.tracking || "").toUpperCase()} · ${(d.carrier || "").toUpperCase()}`;
     document.getElementById("eOrigin").value = d.origin || "";
@@ -492,6 +534,16 @@ Purpose: Admin dashboard script — shipment CRUD via api/admin/shipments.php
       const id = (document.getElementById("editId")?.value || "").trim();
       if (!id) {
         showFlash("err", "Missing shipment ID. Close the dialog and open Edit again.");
+        return;
+      }
+
+      const editStatus = document.getElementById("editStatus");
+      const editStatusError = document.getElementById("editStatusError");
+      const statusVal = (editStatus?.value || "").trim().toLowerCase();
+      if (editStatusError) editStatusError.textContent = "";
+      if (!statusVal || !ALLOWED_STATUSES.includes(statusVal)) {
+        if (editStatusError) editStatusError.textContent = "Please select a valid status.";
+        editStatus?.focus();
         return;
       }
 

@@ -396,10 +396,23 @@ $adminName = htmlspecialchars($_SESSION['full_name'] ?? 'Admin', ENT_QUOTES, 'UT
         <input type="hidden" name="carrier" id="editCarrier">
         <div class="field-row">
           <div class="form-group">
+            <label for="editStatus">Status *</label>
+            <select name="status" id="editStatus" required>
+              <option value="created">Created</option>
+              <option value="picked_up">Picked Up</option>
+              <option value="in_transit">In Transit</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+            </select>
+            <p class="field-error" id="editStatusError" role="alert"></p>
+          </div>
+          <div class="form-group">
             <label for="eOrigin">Route — Origin City</label>
             <input type="text" name="origin_city" id="eOrigin" maxlength="80"
                    placeholder="e.g., Jeddah">
           </div>
+        </div>
+        <div class="field-row">
           <div class="form-group">
             <label for="eDest">Route — Destination City</label>
             <input type="text" name="destination_city" id="eDest" maxlength="80"

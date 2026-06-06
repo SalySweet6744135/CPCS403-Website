@@ -5,7 +5,7 @@
  * Section: CPCS403
  * Date: 31-05-2026
  * File: api/register.php
- * Purpose: Registration API — validate input, hash password, insert user record
+ * Purpose: Registration API — validate input, send email verification link (no DB insert until verified)
  */
 header('Content-Type: application/json');
 
@@ -19,6 +19,7 @@ require_once __DIR__ . '/../server/db_config.php';
 require_once __DIR__ . '/../server/includes/password_policy.php';
 require_once __DIR__ . '/../server/includes/mailer.php';
 require_once __DIR__ . '/../server/includes/db_log.php';
+require_once __DIR__ . '/../server/includes/verification_token.php';
 
 if ($conn === null) {
     http_response_code(503);
@@ -30,9 +31,11 @@ if ($conn === null) {
 }
 
 $fullName = trim($_POST['full_name'] ?? '');
-$email    = trim($_POST['email']     ?? '');
+$email    = strtolower(trim($_POST['email'] ?? ''));
 $password =       $_POST['password'] ?? '';
 $confirm  =       $_POST['confirm']  ?? '';
+
+$duplicateEmailMessage = 'An account with this email already exists. Please sign in instead.';
 
 $errors = [];
 
@@ -61,115 +64,117 @@ if (!empty($errors)) {
     exit;
 }
 
-// Check email not already taken
-$check = $conn->prepare('SELECT id FROM users WHERE email = ?');
+// Read-only check: email must not already be registered
+$check = $conn->prepare('SELECT id FROM users WHERE LOWER(email) = ? LIMIT 1');
 $check->bind_param('s', $email);
 $check->execute();
 $check->store_result();
 
 if ($check->num_rows > 0) {
     http_response_code(422);
-    echo json_encode(['success' => false, 'errors' => [
-        'email' => 'An account with this email already exists.'
-    ]]);
+    echo json_encode([
+        'success' => false,
+        'message' => $duplicateEmailMessage,
+        'errors'  => ['email' => $duplicateEmailMessage],
+    ]);
     $check->close();
     $conn->close();
     exit;
 }
 $check->close();
 
-// Hash with bcrypt — never store plain text
+// Hash password now, but do not insert the user until the email link is clicked
 $hash = password_hash($password, PASSWORD_BCRYPT);
-$role = 'user'; // new registrations are always regular users
+$exp  = time() + SHHIPSMART_REG_TOKEN_TTL;
 
-$stmt = $conn->prepare(
-    'INSERT INTO users (full_name, email, password_hash, role) VALUES (?, ?, ?, ?)'
-);
-$stmt->bind_param('ssss', $fullName, $email, $hash, $role);
+$token = shipsmart_registration_token_create([
+    'full_name'     => $fullName,
+    'email'         => $email,
+    'password_hash' => $hash,
+    'exp'           => $exp,
+]);
 
-if (!$stmt->execute()) {
+if ($token === '') {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Registration failed. Please try again.']);
-    $stmt->close();
+    echo json_encode(['success' => false, 'message' => 'Could not start registration. Please try again.']);
     $conn->close();
     exit;
 }
 
-$userId = $conn->insert_id;
-$stmt->close();
-
-// ── Send welcome confirmation email (same flow as upload / feedback) ──
-$emailSent  = false;
-$emailError = null;
-
-$safeName       = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
-$safeEmail      = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
-$registeredAt   = date('d M Y, H:i');
+$verifyUrl    = shipsmart_registration_verify_url($token);
+$safeName     = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
+$safeEmail    = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+$safeLink     = htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8');
+$expiresLabel = date('d M Y, H:i', $exp);
 
 $emailBody = <<<HTML
 <p style="margin:0 0 16px;color:#444;line-height:1.6;">
   Hi <strong>{$safeName}</strong>,<br />
-  Welcome to <strong>ShipSmart</strong> — your universal shipment tracker for Aramex, DHL, FedEx, and SMSA.
-  Your account has been created successfully. Here are your details:
+  Thanks for signing up for <strong>ShipSmart</strong>. Please confirm that you own this email address
+  to finish creating your account.
 </p>
 
 <table width="100%" cellpadding="0" cellspacing="0"
        style="border-collapse:collapse;font-size:14px;margin-bottom:20px;">
   <tr style="background:#f8f4fb;">
     <td style="padding:10px 14px;border:1px solid #ece6f0;
-               font-weight:600;color:#7b2b6a;width:40%;">Full Name</td>
-    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$safeName}</td>
-  </tr>
-  <tr>
-    <td style="padding:10px 14px;border:1px solid #ece6f0;
-               font-weight:600;color:#7b2b6a;">Account Email</td>
+               font-weight:600;color:#7b2b6a;width:40%;">Email</td>
     <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$safeEmail}</td>
   </tr>
-  <tr style="background:#f8f4fb;">
-    <td style="padding:10px 14px;border:1px solid #ece6f0;
-               font-weight:600;color:#7b2b6a;">Role</td>
-    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">User</td>
-  </tr>
   <tr>
     <td style="padding:10px 14px;border:1px solid #ece6f0;
-               font-weight:600;color:#7b2b6a;">Registered At</td>
-    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$registeredAt}</td>
+               font-weight:600;color:#7b2b6a;">Link expires</td>
+    <td style="padding:10px 14px;border:1px solid #ece6f0;color:#333;">{$expiresLabel}</td>
   </tr>
 </table>
 
-<p style="margin:0 0 10px;color:#444;line-height:1.6;">
-  You can now sign in to search shipments, upload documents, and manage your profile.
+<p style="margin:0 0 20px;text-align:center;">
+  <a href="{$safeLink}"
+     style="display:inline-block;background:#7b2b6a;color:#ffffff;text-decoration:none;
+            padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;">
+    Verify Email &amp; Create Account
+  </a>
 </p>
-<p style="margin:0;color:#444;">— The ShipSmart Team</p>
+
+<p style="margin:0 0 10px;color:#666;font-size:13px;line-height:1.6;">
+  If the button does not work, copy and paste this link into your browser:<br />
+  <a href="{$safeLink}" style="color:#7b2b6a;word-break:break-all;">{$safeLink}</a>
+</p>
+
+<p style="margin:0;color:#888;font-size:12px;line-height:1.5;">
+  If you did not request this account, you can safely ignore this email. No account will be created
+  unless you click the verification link.
+</p>
 HTML;
 
-$subject   = "Welcome — ShipSmart Account Created";
-$emailHtml = buildEmailTemplate('Welcome to ShipSmart!', $emailBody);
+$subject   = 'Verify your ShipSmart email address';
+$emailHtml = buildEmailTemplate('Verify your email', $emailBody);
 $emailSent = sendMail($email, $fullName, $subject, $emailHtml);
 
+$emailError = null;
 if (!$emailSent) {
-    $emailError = 'Account created, but welcome email could not be sent.';
+    $emailError = 'Could not send verification email. Check the address and try again.';
+    logEmail($conn, $email, $subject, 'other', 'failed', null, null, null);
+    $conn->close();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => $emailError,
+        'errors'  => ['email' => $emailError],
+    ]);
+    exit;
 }
 
-logEmail(
-    $conn,
-    $email,
-    $subject,
-    'other',
-    $emailSent ? 'sent' : 'failed',
-    $userId,
-    'users',
-    $userId
-);
-
+logEmail($conn, $email, $subject, 'other', 'sent', null, null, null);
 $conn->close();
 
 echo json_encode([
-    'success'        => true,
-    'message'        => 'Account created! You can now log in.',
-    'full_name'      => $fullName,
-    'email'          => $email,
-    'registered_at'  => $registeredAt,
-    'emailSent'      => $emailSent,
-    'emailError'     => $emailError,
+    'success'           => true,
+    'needsVerification' => true,
+    'message'           => 'Check your inbox and click the verification link to finish registration.',
+    'full_name'         => $fullName,
+    'email'             => $email,
+    'expires_at'        => $expiresLabel,
+    'emailSent'         => true,
+    'emailError'        => $emailError,
 ]);

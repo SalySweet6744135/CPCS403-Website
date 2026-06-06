@@ -12,5 +12,9 @@ header('Content-Type: application/json');
 // include session helpers but do not require DB
 require_once __DIR__ . '/../server/includes/auth.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
-$role = $_SESSION['role'] ?? null;
-echo json_encode(['role' => $role]);
+$loggedIn = isset($_SESSION['user_id']);
+echo json_encode([
+    'loggedIn'  => $loggedIn,
+    'role'      => $loggedIn ? ($_SESSION['role'] ?? null) : null,
+    'full_name' => $loggedIn ? ($_SESSION['full_name'] ?? null) : null,
+]);

@@ -36,7 +36,6 @@
           Admin access is required.
         </p>
         <a class="btn btn-primary btn-inline" href="index.html">Back to Home</a>
-        <a class="btn btn-ghost btn-inline" href="login.php" style="margin-left:10px">Sign In</a>
       </div>
     </section>
   </main>

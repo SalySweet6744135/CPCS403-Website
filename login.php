@@ -7,6 +7,11 @@
  * File: login.php
  * Purpose: Sign-in page — branded split layout with AJAX login to api/login.php
  */
+require_once __DIR__ . '/server/includes/auth.php';
+if (isset($_SESSION['user_id'])) {
+    header('Location: profile.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -401,7 +406,7 @@
         <button class="auth-submit" type="submit" id="loginBtn">Sign In</button>
       </form>
 
-      <div class="auth-switch">
+      <div class="auth-switch auth-guest-only">
         No account yet? <a href="register.php">Create one</a>
       </div>
 

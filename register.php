@@ -7,6 +7,11 @@
  * File: register.php
  * Purpose: Registration page — account creation with password policy and api/register.php
  */
+require_once __DIR__ . '/server/includes/auth.php';
+if (isset($_SESSION['user_id'])) {
+    header('Location: profile.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -321,7 +326,7 @@
           <input type="email" id="regEmail" name="email"
                  placeholder="e.g., sara@example.com"
                  autocomplete="email" required>
-          <p class="auth-email-hint">We’ll email you a welcome message with your account details.</p>
+          <p class="auth-email-hint">We’ll send a verification link to this address. Your account is only created after you confirm the email.</p>
           <p class="err" id="emailError"></p>
         </div>
 
@@ -355,7 +360,7 @@
         </div>
 
         <button class="auth-submit" type="submit" id="registerBtn">
-          Create Account &amp; Send Welcome Email
+          Create Account &amp; Send Verification Email
         </button>
 
         <p class="auth-terms">
@@ -363,16 +368,17 @@
         </p>
       </form>
 
-      <!-- Success state (same pattern as upload confirmation) -->
+      <!-- Success state — verification email sent (account not in DB yet) -->
       <div id="registerSuccess" hidden class="auth-success">
-        <div class="auth-success-icon">✓</div>
-        <h3>Account Created!</h3>
-        <p id="registerSuccessMsg" class="muted">Your ShipSmart account is ready.</p>
+        <div class="auth-success-icon">✉</div>
+        <h3>Check your email</h3>
+        <p id="registerSuccessMsg" class="muted">We sent a verification link to your inbox.</p>
         <div class="register-success-meta" id="registerSuccessMeta" aria-live="polite"></div>
-        <a href="login.php" class="auth-submit register-signin-btn">Sign In</a>
+        <p class="auth-email-hint" style="margin-top:12px;">Open the email and click <strong>Verify Email &amp; Create Account</strong>. The link expires in 24 hours.</p>
+        <a href="login.php" class="auth-submit register-signin-btn">Go to Sign In</a>
       </div>
 
-      <div class="auth-switch">
+      <div class="auth-switch auth-guest-only">
         Already have an account? <a href="login.php">Sign in</a>
       </div>
 
@@ -393,7 +399,7 @@
   const successMeta  = document.getElementById("registerSuccessMeta");
   const authSwitch   = document.querySelector(".auth-switch");
   const generalErr   = document.getElementById("generalError");
-  const SUBMIT_LABEL = "Create Account & Send Welcome Email";
+  const SUBMIT_LABEL = "Create Account & Send Verification Email";
 
   const fields = {
     full_name: { input: document.getElementById("regName"),     err: document.getElementById("nameError") },
@@ -441,6 +447,7 @@
   const clrAll = () => {
     Object.keys(fields).forEach(k => setErr(k, ""));
     generalErr.textContent = "";
+    generalErr.innerHTML = "";
     generalErr.classList.remove("visible");
   };
 
@@ -504,41 +511,56 @@
     if (!validateClient()) return;
 
     btn.disabled    = true;
-    btn.textContent = "Creating account…";
+    btn.textContent = "Sending verification…";
 
     fetch("api/register.php", { method: "POST", credentials: "include", body: new FormData(form) })
-      .then(r => r.json())
+      .then(async (r) => {
+        let data;
+        try {
+          data = await r.json();
+        } catch {
+          throw new Error("bad_json");
+        }
+        return data;
+      })
       .then(data => {
-        if (data.success) {
+        if (data.success && data.needsVerification) {
           form.hidden       = true;
           if (authSwitch) authSwitch.hidden = true;
           successBox.hidden = false;
 
+          const targetEmail = data.email || fields.email.input.value.trim();
           if (successMsg) {
-            successMsg.textContent =
-              data.full_name
-                ? `Welcome, ${data.full_name}! Your account has been created.`
-                : "Your ShipSmart account has been created.";
+            successMsg.textContent = targetEmail
+              ? `We sent a verification link to ${targetEmail}.`
+              : "We sent a verification link to your email.";
           }
 
-          let metaHtml =
-            `<p><strong>Email:</strong> ${data.email || fields.email.input.value.trim()}</p>`;
-          if (data.registered_at) {
-            metaHtml += `<p><strong>Registered:</strong> ${data.registered_at}</p>`;
+          let metaHtml = `<p><strong>Email:</strong> ${targetEmail}</p>`;
+          if (data.expires_at) {
+            metaHtml += `<p><strong>Link expires:</strong> ${data.expires_at}</p>`;
           }
-
-          if (data.emailSent) {
-            metaHtml += `<p style="color:#2e7d32;">&#10003; Welcome email sent to your inbox.</p>`;
-          } else if (data.emailError) {
-            metaHtml += `<p style="color:#b26a00;">&#9888; ${data.emailError}</p>`;
-          } else {
-            metaHtml += `<p style="color:#b26a00;">&#9888; Account created, but welcome email could not be sent.</p>`;
-          }
+          metaHtml += `<p style="color:#2e7d32;">&#10003; No account was created yet. Click the link in your email to finish registration.</p>`;
 
           if (successMeta) successMeta.innerHTML = metaHtml;
           window.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (data.success) {
+          generalErr.textContent = data.message || "Unexpected response. Please try again.";
+          generalErr.classList.add("visible");
         } else {
-          if (data.errors) {
+          const duplicateEmail =
+            data.errors?.email ||
+            (data.message && /already exists/i.test(data.message) ? data.message : "");
+
+          if (duplicateEmail) {
+            setErr("email", duplicateEmail);
+            generalErr.innerHTML =
+              duplicateEmail +
+              ' <a href="login.php" style="color:inherit;text-decoration:underline;">Sign in</a>';
+            generalErr.classList.add("visible");
+            fields.email.input.focus();
+            fields.email.input.scrollIntoView({ behavior: "smooth", block: "center" });
+          } else if (data.errors) {
             Object.entries(data.errors).forEach(([k, v]) => {
               if (fields[k]) setErr(k, v);
               else {
@@ -546,6 +568,10 @@
                 generalErr.classList.add("visible");
               }
             });
+            const firstKey = Object.keys(data.errors)[0];
+            if (firstKey && fields[firstKey]) {
+              fields[firstKey].input.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
           } else {
             generalErr.textContent = data.message || "Something went wrong.";
             generalErr.classList.add("visible");

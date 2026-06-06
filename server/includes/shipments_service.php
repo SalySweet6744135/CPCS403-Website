@@ -60,7 +60,151 @@ function shipments_normalize_list(array $data): array
         ];
     }
 
-    return shipment_meta_merge_list($shipments);
+    return shipment_local_db_merge(shipment_meta_merge_list($shipments));
+}
+
+/**
+ * Overlay status and route from local shipments table (source of truth for admin KPIs).
+ *
+ * @param array<int, array<string, mixed>> $shipments
+ * @return array<int, array<string, mixed>>
+ */
+function shipment_local_db_merge(array $shipments): array
+{
+    global $conn;
+    if (!$conn || $shipments === []) {
+        return $shipments;
+    }
+
+    $result = $conn->query(
+        'SELECT tracking_number, carrier, status, origin_city, destination_city FROM shipments'
+    );
+    if (!$result) {
+        return $shipments;
+    }
+
+    $byKey = [];
+    while ($row = $result->fetch_assoc()) {
+        $tn = strtolower(trim((string) ($row['tracking_number'] ?? '')));
+        $ca = strtolower(trim((string) ($row['carrier'] ?? '')));
+        if ($tn === '' || $ca === '') {
+            continue;
+        }
+        $byKey[$tn . '|' . $ca] = $row;
+    }
+    $result->free();
+
+    if ($byKey === []) {
+        return $shipments;
+    }
+
+    $carrierAliases = [
+        'smsa-express' => 'smsa',
+        'ups'          => 'aramex',
+        'usps'         => 'aramex',
+    ];
+
+    foreach ($shipments as &$s) {
+        $tn = strtolower(trim((string) ($s['tracking_number'] ?? '')));
+        $ca = strtolower(trim((string) ($s['carrier'] ?? '')));
+        if ($tn === '') {
+            continue;
+        }
+
+        $keys = [$tn . '|' . $ca];
+        if (isset($carrierAliases[$ca])) {
+            $keys[] = $tn . '|' . $carrierAliases[$ca];
+        }
+
+        $row = null;
+        foreach ($keys as $key) {
+            if (isset($byKey[$key])) {
+                $row = $byKey[$key];
+                break;
+            }
+        }
+        if ($row === null) {
+            continue;
+        }
+
+        if (!empty($row['status'])) {
+            $s['status'] = (string) $row['status'];
+        }
+        if (!empty($row['origin_city']) && ($s['origin_city'] ?? '') === '') {
+            $s['origin_city'] = (string) $row['origin_city'];
+        }
+        if (!empty($row['destination_city']) && ($s['destination_city'] ?? '') === '') {
+            $s['destination_city'] = (string) $row['destination_city'];
+        }
+    }
+    unset($s);
+
+    return $shipments;
+}
+
+/**
+ * Update matching row in local shipments table (tracking + carrier).
+ *
+ * @param array<string, mixed> $fields
+ */
+function shipments_update_local_by_tracking(string $tracking, string $carrier, array $fields): void
+{
+    global $conn;
+    if (!$conn || $tracking === '') {
+        return;
+    }
+
+    $carrier = strtolower(trim($carrier));
+    $carrierMap = ['smsa-express' => 'smsa', 'ups' => 'aramex', 'usps' => 'aramex'];
+    if (isset($carrierMap[$carrier])) {
+        $carrier = $carrierMap[$carrier];
+    }
+
+    $sets   = [];
+    $types  = '';
+    $values = [];
+
+    if (array_key_exists('status', $fields) && $fields['status'] !== '') {
+        $status = strtolower(trim((string) $fields['status']));
+        if (in_array($status, shipment_allowed_statuses(), true)) {
+            $sets[]   = 'status = ?';
+            $types   .= 's';
+            $values[] = $status;
+        }
+    }
+    if (array_key_exists('origin_city', $fields)) {
+        $sets[]   = 'origin_city = ?';
+        $types   .= 's';
+        $values[] = trim((string) $fields['origin_city']);
+    }
+    if (array_key_exists('destination_city', $fields)) {
+        $sets[]   = 'destination_city = ?';
+        $types   .= 's';
+        $values[] = trim((string) $fields['destination_city']);
+    }
+
+    if ($sets === []) {
+        return;
+    }
+
+    $sets[]   = 'last_updated = ?';
+    $types   .= 's';
+    $values[] = date('Y-m-d H:i:s');
+
+    $types   .= 'ss';
+    $values[] = $tracking;
+    $values[] = $carrier;
+
+    $sql = 'UPDATE shipments SET ' . implode(', ', $sets)
+        . ' WHERE tracking_number = ? AND carrier = ? LIMIT 1';
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        return;
+    }
+    $stmt->bind_param($types, ...$values);
+    $stmt->execute();
+    $stmt->close();
 }
 
 /**
@@ -334,6 +478,14 @@ function shipments_edit(array $post): array
     $weight = trim((string) ($post['weight_kg'] ?? ''));
     $eta    = trim((string) ($post['estimated_delivery'] ?? ''));
     $note   = trim((string) ($post['note'] ?? ''));
+    $status = strtolower(trim((string) ($post['status'] ?? '')));
+    $hasStatus = array_key_exists('status', $post);
+
+    if ($hasStatus) {
+        if ($status === '' || !in_array($status, shipment_allowed_statuses(), true)) {
+            return ['ok' => false, 'message' => 'Please select a valid shipment status.'];
+        }
+    }
 
     $hasRoute = array_key_exists('origin_city', $post) || array_key_exists('destination_city', $post);
     if ($hasRoute) {
@@ -356,38 +508,61 @@ function shipments_edit(array $post): array
         $params['note'] = $note;
     }
 
-    if ($params === []) {
+    if ($params === [] && !$hasStatus) {
         return ['ok' => false, 'message' => 'Nothing to update — please change at least one field.'];
     }
 
+    $tracking = trim((string) ($post['tracking_number'] ?? ''));
+    $carrier  = strtolower(trim((string) ($post['carrier'] ?? $post['courier_code'] ?? '')));
+
     try {
-        $sdk  = trackingmore_trackings();
-        $res  = $sdk->updateTrackingByID($id, $params);
-        $code = (int) ($res['meta']['code'] ?? 0);
+        $code = 200;
+        if ($params !== []) {
+            $sdk  = trackingmore_trackings();
+            $res  = $sdk->updateTrackingByID($id, $params);
+            $code = (int) ($res['meta']['code'] ?? 0);
 
-        if ($code === 200) {
-            $tracking = trim((string) ($post['tracking_number'] ?? ''));
-            $carrier  = strtolower(trim((string) ($post['carrier'] ?? $post['courier_code'] ?? '')));
-
-            $localMeta = [];
-            if (array_key_exists('weight_kg', $post)) {
-                $localMeta['weight_kg'] = $weight !== '' ? $weight : null;
+            if ($code !== 200) {
+                return [
+                    'ok'       => false,
+                    'message'  => 'TrackingMore: ' . ($res['meta']['message'] ?? 'Unknown error'),
+                    'api_code' => $code,
+                ];
             }
-            if (array_key_exists('estimated_delivery', $post)) {
-                $localMeta['estimated_delivery'] = $eta !== '' ? $eta : null;
-            }
-            if ($localMeta !== [] && $tracking !== '') {
-                shipment_meta_upsert($id, $tracking, $carrier, $localMeta);
-            }
-
-            return ['ok' => true, 'message' => 'Shipment updated successfully.', 'api_code' => $code];
         }
 
-        return [
-            'ok'      => false,
-            'message' => 'TrackingMore: ' . ($res['meta']['message'] ?? 'Unknown error'),
-            'api_code' => $code,
-        ];
+        $localMeta = [];
+        if (array_key_exists('weight_kg', $post)) {
+            $localMeta['weight_kg'] = $weight !== '' ? $weight : null;
+        }
+        if (array_key_exists('estimated_delivery', $post)) {
+            $localMeta['estimated_delivery'] = $eta !== '' ? $eta : null;
+        }
+        if ($hasStatus) {
+            $localMeta['status'] = $status;
+        }
+
+        if ($localMeta !== [] && $tracking !== '') {
+            shipment_meta_upsert($id, $tracking, $carrier, $localMeta);
+        }
+
+        if ($tracking !== '') {
+            $localFields = [];
+            if ($hasStatus) {
+                $localFields['status'] = $status;
+            }
+            if (array_key_exists('origin_city', $post)) {
+                $localFields['origin_city'] = $origin;
+            }
+            if (array_key_exists('destination_city', $post)) {
+                $localFields['destination_city'] = $dest;
+            }
+            if ($localFields !== []) {
+                shipments_update_local_by_tracking($tracking, $carrier, $localFields);
+            }
+        }
+
+        return ['ok' => true, 'message' => 'Shipment updated successfully.', 'api_code' => $code];
     } catch (\TrackingMore\TrackingMoreException $e) {
         return ['ok' => false, 'message' => 'SDK error: ' . $e->getMessage()];
     }
