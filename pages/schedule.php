@@ -343,7 +343,7 @@ function statusClass(string $s): string {
           <li><a class="nav-link" href="../index.html">Home</a></li>
           <li><a class="nav-link" href="services.html">About Us</a></li>
           <li><a class="nav-link is-active" href="schedule.php">Shipping Schedule</a></li>
-          <li><a class="nav-link" href="search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="search.php">Search Shipments</a></li>
           <li><a class="nav-link" href="upload.html">Upload Documents</a></li>
           <li><a class="nav-link" href="feedback.html">Share Feedback</a></li>
           <li><a class="nav-link" href="../profile.php">My Profile</a></li>
@@ -556,7 +556,7 @@ function statusClass(string $s): string {
             <li><a href="../index.html">Home</a></li>
             <li><a href="services.html">About Us</a></li>
             <li><a href="schedule.php">Shipping Schedule</a></li>
-            <li><a href="search.html">Search Shipments</a></li>
+            <li><a href="search.php">Search Shipments</a></li>
             <li><a href="upload.html">Upload Documents</a></li>
             <li><a href="feedback.html">Share Feedback</a></li>
           </ul>

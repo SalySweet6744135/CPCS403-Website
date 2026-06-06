@@ -212,12 +212,19 @@ Purpose: Search page script — debounced live search and filters via api/search
 
     setLoading(true);
 
-    fetch(url)
+    fetch(url, { credentials: "include" })
       .then((res) => {
+        if (res.status === 401) {
+          window.location.href = "../login.php?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+          return null;
+        }
         if (!res.ok) throw new Error("Search request failed");
         return res.json();
       })
-      .then((data) => renderResults(Array.isArray(data) ? data : []))
+      .then((data) => {
+        if (data === null) return;
+        renderResults(Array.isArray(data) ? data : []);
+      })
       .catch(() => {
         renderResults([]);
         if (countEl) countEl.textContent = "Unable to load shipments";
@@ -255,9 +262,19 @@ Purpose: Search page script — debounced live search and filters via api/search
       ? API_URL + "?" + params.toString()
       : API_URL + "?source=trackingmore";
     setLoading(true);
-    fetch(url)
-      .then((res) => { if (!res.ok) throw new Error('Lookup failed'); return res.json(); })
-      .then((data) => renderResults(Array.isArray(data) ? data : []))
+    fetch(url, { credentials: "include" })
+      .then((res) => {
+        if (res.status === 401) {
+          window.location.href = "../login.php?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+          return null;
+        }
+        if (!res.ok) throw new Error('Lookup failed');
+        return res.json();
+      })
+      .then((data) => {
+        if (data === null) return;
+        renderResults(Array.isArray(data) ? data : []);
+      })
       .catch(() => {
         renderResults([]);
         if (countEl) countEl.textContent = 'Lookup failed';

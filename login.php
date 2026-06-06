@@ -474,7 +474,8 @@ if (isset($_SESSION['user_id'])) {
       .then(data => {
         if (data.success) {
           btn.textContent = "Redirecting…";
-          window.location.href = data.redirect;
+          const returnTo = params.get("redirect");
+          window.location.href = returnTo || data.redirect;
         } else {
           if (data.errors) {
             if (data.errors.general) {

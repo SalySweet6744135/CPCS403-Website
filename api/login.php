@@ -102,7 +102,7 @@ $conn->close();
 
 $redirect = $user['role'] === 'admin'
     ? 'admin/dashboard.php'
-    : 'index.html';
+    : 'index.php';
 
 echo json_encode([
     'success'  => true,

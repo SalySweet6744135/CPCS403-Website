@@ -20,28 +20,32 @@ Purpose: Global JavaScript — navigation toggle, feedback form AJAX, session-aw
   const apiUrl = (endpoint) => `${apiRoot}/${endpoint.replace(/^\//, "")}`;
 
   // Session-aware UI: hide Sign In / Create Account when logged in; show admin nav for admins
-  (function applySessionNav() {
+  function applySessionNav(session) {
+    if (!session) return;
+
+    const loggedIn = !!session.loggedIn;
+    document.body.classList.toggle("is-logged-in", loggedIn);
+    document.body.classList.toggle("is-guest", !loggedIn);
+
+    if (session.role === "admin") {
+      const adminNav = document.getElementById("nav-dashboard");
+      if (adminNav) adminNav.style.display = "";
+    }
+
+    document.querySelectorAll(".auth-guest-only").forEach((el) => {
+      el.hidden = loggedIn;
+    });
+
+    document.querySelectorAll(".auth-user-only").forEach((el) => {
+      el.hidden = !loggedIn;
+    });
+  }
+
+  (function loadSessionNav() {
     try {
       fetch(apiUrl("api/whoami.php"), { credentials: "include" })
-        .then((r) => r.json())
-        .then((session) => {
-          if (!session) return;
-
-          const loggedIn = !!session.loggedIn;
-
-          if (session.role === "admin") {
-            const adminNav = document.getElementById("nav-dashboard");
-            if (adminNav) adminNav.style.display = "";
-          }
-
-          document.querySelectorAll(".auth-guest-only").forEach((el) => {
-            el.hidden = loggedIn;
-          });
-
-          document.querySelectorAll(".auth-user-only").forEach((el) => {
-            el.hidden = !loggedIn;
-          });
-        })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((session) => applySessionNav(session))
         .catch(() => {});
     } catch (e) { /* ignore */ }
   })();
@@ -222,7 +226,7 @@ Purpose: Global JavaScript — navigation toggle, feedback form AJAX, session-aw
     const params = new URLSearchParams({ q });
     if (carrier) params.set("carrier", carrier);
 
-    fetch(`${apiUrl("api/search.php")}?${params.toString()}`)
+    fetch(`${apiUrl("api/search.php")}?${params.toString()}`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error("Search failed");
         return res.json();

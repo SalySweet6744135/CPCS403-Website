@@ -1539,6 +1539,12 @@ body.menu-open .nav-list{
 /* Ensure hidden attribute always works even when CSS sets display */
 [hidden] { display: none !important; }
 
+/* Auth-aware nav: guest vs signed-in controls */
+body.is-logged-in .auth-guest-only { display: none !important; }
+body.is-guest .auth-user-only { display: none !important; }
+
+.hero-welcome { margin-top: 12px; font-size: 0.95rem; }
+
 /* Success card */
 .upload-success{
   padding:2.5rem 2rem;

@@ -204,7 +204,7 @@ $adminName = htmlspecialchars($_SESSION['full_name'] ?? 'Admin', ENT_QUOTES, 'UT
           <li><a class="nav-link" href="../index.html">Home</a></li>
           <li><a class="nav-link" href="../pages/services.html">About Us</a></li>
           <li><a class="nav-link" href="../pages/schedule.php">Shipping Schedule</a></li>
-          <li><a class="nav-link" href="../pages/search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="../pages/search.php">Search Shipments</a></li>
           <li><a class="nav-link" href="../pages/upload.html">Upload Documents</a></li>
           <li><a class="nav-link" href="../pages/feedback.html">Share Feedback</a></li>
           <li><a class="nav-link" href="../profile.php">My Profile</a></li>

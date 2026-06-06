@@ -15,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
+require_once __DIR__ . '/../server/includes/auth.php';
+require_login();
+
 require_once __DIR__ . '/../server/includes/db.php';
 
 // ── Helper: save a TrackingMore result into local shipments table ─────────────

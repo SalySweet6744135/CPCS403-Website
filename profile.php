@@ -39,7 +39,7 @@ $initial = mb_strtoupper(mb_substr($_SESSION['full_name'] ?? 'U', 0, 1, 'UTF-8')
           <li><a class="nav-link" href="index.html">Home</a></li>
           <li><a class="nav-link" href="pages/services.html">About Us</a></li>
           <li><a class="nav-link" href="pages/schedule.php">Shipping Schedule</a></li>
-          <li><a class="nav-link" href="pages/search.html">Search Shipments</a></li>
+          <li><a class="nav-link" href="pages/search.php">Search Shipments</a></li>
           <li><a class="nav-link" href="pages/upload.html">Upload Documents</a></li>
           <li><a class="nav-link" href="pages/feedback.html">Share Feedback</a></li>
           <li><a class="nav-link is-active" href="profile.php">My Profile</a></li>
@@ -138,7 +138,7 @@ $initial = mb_strtoupper(mb_substr($_SESSION['full_name'] ?? 'U', 0, 1, 'UTF-8')
             <li><a href="index.html">Home</a></li>
             <li><a href="pages/services.html">About Us</a></li>
             <li><a href="pages/schedule.php">Shipping Schedule</a></li>
-            <li><a href="pages/search.html">Search Shipments</a></li>
+            <li><a href="pages/search.php">Search Shipments</a></li>
             <li><a href="pages/upload.html">Upload Documents</a></li>
             <li><a href="pages/feedback.html">Share Feedback</a></li>
           </ul>

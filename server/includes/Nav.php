@@ -18,7 +18,7 @@ $links = [
     'home'     => ['label' => 'Home',     'href' => $prefix . 'index.html'],
     'services' => ['label' => 'About Us', 'href' => $prefix . 'pages/services.html'],
     'schedule' => ['label' => 'Shipping Schedule', 'href' => $prefix . 'pages/schedule.php'],
-    'search'   => ['label' => 'Search Shipments', 'href' => $prefix . 'pages/search.html'],
+    'search'   => ['label' => 'Search Shipments', 'href' => $prefix . 'pages/search.php'],
     'upload'   => ['label' => 'Upload Documents', 'href' => $prefix . 'pages/upload.html'],
     'feedback' => ['label' => 'Share Feedback', 'href' => $prefix . 'pages/feedback.html'],
 ];
