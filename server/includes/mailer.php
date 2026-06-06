@@ -5,33 +5,64 @@
  * Section: CPCS403
  * Date: 31-05-2026
  * File: server/includes/mailer.php
- * Purpose: Email helper — branded HTML templates and PHP mail() sender
+ * Purpose: Email helper — branded HTML templates and SMTP sender via PHPMailer
  */
+
+// ── SMTP credentials — replace with your Gmail address and App Password ──
+define('SMTP_HOST',     'smtp.gmail.com');
+define('SMTP_PORT',     587);
+define('SMTP_USERNAME', 'sma.salloum@gmail.com');   // ← your Gmail address
+define('SMTP_PASSWORD', 'kiig gszk mdab teye');    // ← 16-char Gmail App Password
+define('SMTP_FROM',     'sma.salloum@gmail.com');   // ← same Gmail address
+define('SMTP_NAME',     'ShipSmart');
+
 /**
- * Send an HTML email using PHP's built-in mail().
+ * Send an HTML email via SMTP using PHPMailer.
  *
  * @param string $toEmail     Recipient email address
- * @param string $toName      Recipient display name (used in "To:" header)
+ * @param string $toName      Recipient display name
  * @param string $subject     Email subject line
  * @param string $htmlBody    Full HTML content to send
  * @return bool               true on success, false on failure
  */
 function sendMail(string $toEmail, string $toName, string $subject, string $htmlBody): bool
 {
-    $fromName  = 'ShipSmart';
-    $fromEmail = 'noreply@shipsmart.com';
+    $phpmailerDir = __DIR__ . '/PHPMailer/';
 
-    // Build "To: Name <email>" header
-    $recipient = $toName ? "{$toName} <{$toEmail}>" : $toEmail;
+    // Fall back to PHP mail() if PHPMailer files are not uploaded yet
+    if (!file_exists($phpmailerDir . 'PHPMailer.php')) {
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: ShipSmart <noreply@shipsmart.com>\r\n";
+        return mail($toEmail, $subject, $htmlBody, $headers);
+    }
 
-    // Required email headers
-    $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: {$fromName} <{$fromEmail}>\r\n";
-    $headers .= "Reply-To: {$fromEmail}\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+    require_once $phpmailerDir . 'Exception.php';
+    require_once $phpmailerDir . 'PHPMailer.php';
+    require_once $phpmailerDir . 'SMTP.php';
 
-    return mail($recipient, $subject, $htmlBody, $headers);
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = SMTP_USERNAME;
+        $mail->Password   = SMTP_PASSWORD;
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = SMTP_PORT;
+
+        $mail->setFrom(SMTP_FROM, SMTP_NAME);
+        $mail->addAddress($toEmail, $toName);
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlBody;
+
+        $mail->send();
+        return true;
+    } catch (\Exception $e) {
+        return false;
+    }
 }
 
 /**
