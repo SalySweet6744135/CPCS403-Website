@@ -451,7 +451,7 @@ if (isset($_SESSION['user_id'])) {
     e.preventDefault();
     clrAll();
 
-    const email = emailInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
     const pw    = pwInput.value;
     let ok = true;
 
@@ -466,7 +466,10 @@ if (isset($_SESSION['user_id'])) {
     btn.disabled    = true;
     btn.textContent = "Signing in…";
 
-    fetch("api/login.php", { method: "POST", credentials: "include", body: new FormData(form) })
+    const fd = new FormData(form);
+    fd.set("email", email);
+
+    fetch("api/login.php", { method: "POST", credentials: "include", body: fd })
       .then(r => r.json())
       .then(data => {
         if (data.success) {

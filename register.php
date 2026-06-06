@@ -324,10 +324,13 @@ if (isset($_SESSION['user_id'])) {
         <div class="auth-field">
           <label for="regEmail">Email Address</label>
           <input type="email" id="regEmail" name="email"
-                 placeholder="e.g., sara@example.com"
-                 autocomplete="email" required>
-          <p class="auth-email-hint">We’ll send a verification link to this address. Your account is only created after you confirm the email.</p>
-          <p class="err" id="emailError"></p>
+                 placeholder="e.g., sara@gmail.com"
+                 autocomplete="email"
+                 inputmode="email"
+                 spellcheck="false"
+                 maxlength="255"
+                 required>
+          <p class="err" id="emailError" aria-live="polite"></p>
         </div>
 
         <div class="auth-field">
@@ -360,7 +363,7 @@ if (isset($_SESSION['user_id'])) {
         </div>
 
         <button class="auth-submit" type="submit" id="registerBtn">
-          Create Account &amp; Send Verification Email
+          Create Account
         </button>
 
         <p class="auth-terms">
@@ -368,14 +371,13 @@ if (isset($_SESSION['user_id'])) {
         </p>
       </form>
 
-      <!-- Success state — verification email sent (account not in DB yet) -->
-      <div id="registerSuccess" hidden class="auth-success">
-        <div class="auth-success-icon">✉</div>
-        <h3>Check your email</h3>
-        <p id="registerSuccessMsg" class="muted">We sent a verification link to your inbox.</p>
-        <div class="register-success-meta" id="registerSuccessMeta" aria-live="polite"></div>
-        <p class="auth-email-hint" style="margin-top:12px;">Open the email and click <strong>Verify Email &amp; Create Account</strong>. The link expires in 24 hours.</p>
-        <a href="login.php" class="auth-submit register-signin-btn">Go to Sign In</a>
+      <!-- Success state (same pattern as upload confirmation) -->
+      <div id="registerSuccess" hidden class="card upload-success">
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <h2>Account Created!</h2>
+        <p id="registerSuccessMsg" class="muted"></p>
+        <div class="success-meta" id="registerSuccessMeta" aria-live="polite"></div>
+        <a href="login.php" class="auth-submit register-signin-btn">Sign In</a>
       </div>
 
       <div class="auth-switch auth-guest-only">
@@ -399,7 +401,62 @@ if (isset($_SESSION['user_id'])) {
   const successMeta  = document.getElementById("registerSuccessMeta");
   const authSwitch   = document.querySelector(".auth-switch");
   const generalErr   = document.getElementById("generalError");
-  const SUBMIT_LABEL = "Create Account & Send Verification Email";
+  const SUBMIT_LABEL = "Create Account";
+
+  const BLOCKED_EMAIL_DOMAINS = [
+    "example.com", "example.org", "test.com", "localhost",
+    "mailinator.com", "guerrillamail.com", "tempmail.com", "yopmail.com",
+    "10minutemail.com", "fakeinbox.com", "trashmail.com"
+  ];
+  const BLOCKED_EMAIL_LOCALS = ["test", "fake", "noreply", "admin", "user", "demo"];
+
+  const emailDomainValidationMessage = (domain) => {
+    if (!domain || !domain.includes(".")) {
+      return "Email domain is invalid. Use a real provider like gmail.com or outlook.com.";
+    }
+    if (!/[a-z]/.test(domain)) {
+      return "Email domain must include letters (e.g. gmail.com, not 1.com).";
+    }
+    const parts = domain.split(".");
+    const tld = parts.pop();
+    if (!tld || !/^[a-z]{2,}$/.test(tld)) {
+      return "Email domain must end with a valid extension (e.g. .com, .edu).";
+    }
+    for (const label of parts) {
+      if (!label) return "Email domain is invalid.";
+      if (label.length < 2) {
+        return "Email domain is invalid. Use a real provider like gmail.com.";
+      }
+      if (!/[a-z]/.test(label)) {
+        return "Email domain is invalid. Use a real provider like gmail.com.";
+      }
+      if (/^\d+$/.test(label)) {
+        return "Email domain cannot be numbers only (e.g. 1.com is not allowed).";
+      }
+    }
+    return "";
+  };
+
+  const emailValidationMessage = (raw) => {
+    const email = (raw || "").trim().toLowerCase();
+    if (!email) return "Please enter your email address.";
+    if (!/^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/i.test(email)) {
+      return "Please enter a valid email address (e.g. name@gmail.com).";
+    }
+    const [local, domain] = email.split("@");
+    if (!local || local.length < 2) {
+      return "The part before @ must be at least 2 characters.";
+    }
+    const domainMsg = emailDomainValidationMessage(domain);
+    if (domainMsg) return domainMsg;
+    if (BLOCKED_EMAIL_DOMAINS.includes(domain)) {
+      return "Disposable or test email addresses are not allowed. Use a real inbox.";
+    }
+    if (BLOCKED_EMAIL_LOCALS.includes(local)) {
+      return "Please use your personal email address, not a generic placeholder.";
+    }
+    return "";
+  };
 
   const fields = {
     full_name: { input: document.getElementById("regName"),     err: document.getElementById("nameError") },
@@ -493,8 +550,9 @@ if (isset($_SESSION['user_id'])) {
     if (name.length < 2) {
       setErr("full_name", "Full name must be at least 2 characters."); ok = false;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      setErr("email", "Please enter a valid email address."); ok = false;
+    const emailMsg = emailValidationMessage(email);
+    if (emailMsg) {
+      setErr("email", emailMsg); ok = false;
     }
     const pwMsg = passwordValidationMessage(pw);
     if (pwMsg) {
@@ -506,14 +564,27 @@ if (isset($_SESSION['user_id'])) {
     return ok;
   };
 
+  fields.email.input.addEventListener("blur", () => {
+    const msg = emailValidationMessage(fields.email.input.value);
+    setErr("email", msg);
+  });
+
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    if (!validateClient()) return;
+    if (!validateClient()) {
+      const firstErr = form.querySelector(".has-error");
+      firstErr?.scrollIntoView({ behavior: "smooth", block: "center" });
+      firstErr?.focus();
+      return;
+    }
 
     btn.disabled    = true;
-    btn.textContent = "Sending verification…";
+    btn.textContent = "Creating account…";
 
-    fetch("api/register.php", { method: "POST", credentials: "include", body: new FormData(form) })
+    const fd = new FormData(form);
+    fd.set("email", fields.email.input.value.trim().toLowerCase());
+
+    fetch("api/register.php", { method: "POST", credentials: "include", body: fd })
       .then(async (r) => {
         let data;
         try {
@@ -524,29 +595,34 @@ if (isset($_SESSION['user_id'])) {
         return data;
       })
       .then(data => {
-        if (data.success && data.needsVerification) {
+        if (data.success) {
           form.hidden       = true;
           if (authSwitch) authSwitch.hidden = true;
           successBox.hidden = false;
 
           const targetEmail = data.email || fields.email.input.value.trim();
           if (successMsg) {
-            successMsg.textContent = targetEmail
-              ? `We sent a verification link to ${targetEmail}.`
-              : "We sent a verification link to your email.";
+            successMsg.textContent = data.full_name
+              ? `"${data.full_name}" has been registered and saved to your ShipSmart account.`
+              : "Your account has been registered and saved to ShipSmart.";
           }
 
-          let metaHtml = `<p><strong>Email:</strong> ${targetEmail}</p>`;
-          if (data.expires_at) {
-            metaHtml += `<p><strong>Link expires:</strong> ${data.expires_at}</p>`;
+          let metaHtml =
+            `<p><strong>Email:</strong> ${targetEmail}</p>`;
+          if (data.registered_at) {
+            metaHtml += `<p><strong>Registered:</strong> ${data.registered_at}</p>`;
           }
-          metaHtml += `<p style="color:#2e7d32;">&#10003; No account was created yet. Click the link in your email to finish registration.</p>`;
+
+          if (data.emailSent) {
+            metaHtml += `<p style="color:#2e7d32;">&#10003; Welcome email sent to your inbox.</p>`;
+          } else if (data.emailError) {
+            metaHtml += `<p style="color:#b26a00;">&#9888; ${data.emailError}</p>`;
+          } else {
+            metaHtml += `<p style="color:#b26a00;">&#9888; Account created, but welcome email could not be sent.</p>`;
+          }
 
           if (successMeta) successMeta.innerHTML = metaHtml;
           window.scrollTo({ top: 0, behavior: "smooth" });
-        } else if (data.success) {
-          generalErr.textContent = data.message || "Unexpected response. Please try again.";
-          generalErr.classList.add("visible");
         } else {
           const duplicateEmail =
             data.errors?.email ||
