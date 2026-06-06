@@ -9,9 +9,9 @@
  */
 // ── Database credentials ──
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'shipsmart_db');
-define('DB_USER', 'root');  // MariaDB user
-define('DB_PASS', '');      // no password
+define('DB_NAME', 'u810765760_shipsmart_db');
+define('DB_USER', 'u810765760_shipsmart_db');
+define('DB_PASS', '123123Wa@');
 
 // ── Create connection using MySQLi (robust against socket vs TCP)
 // On macOS/PHP setups 'localhost' may attempt a UNIX socket which is missing;
